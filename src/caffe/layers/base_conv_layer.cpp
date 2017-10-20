@@ -9,6 +9,27 @@
 namespace caffe {
 
 template <typename Dtype>
+void BaseConvolutionLayer<Dtype>::WeightAlign(){
+	CHECK_EQ(this->blobs_[0]->num_axes(),4);//caffe now supports any dimension
+	//is_sparse_format_weights_ = false;
+	const LayerParameter& layerparam = this->layer_param();
+	LOG(INFO)<<"layer\t"<<layerparam.name()<<"\t"<<"has sparsity of "<< this->blobs_[0]->GetSparsity();
+	this->blobs_[0]->WriteToNistMMIO(layerparam.name()+".weight");
+
+	
+
+	//disconnect connections
+	if( layerparam.connectivity_mode() == caffe::LayerParameter_ConnectivityMode_DISCONNECTED_ELTWISE ){
+		LOG(INFO)<<"all zero weights of "<<layerparam.name()<<" are frozen";
+		this->blobs_[0]->Disconnect(Blob<Dtype>::ELTWISE);
+	}else if(layerparam.connectivity_mode() == caffe::LayerParameter_ConnectivityMode_DISCONNECTED_GRPWISE){
+		LOG(INFO)<<"weights lying in all-zero groups of "<<layerparam.name()<<" are frozen";
+		this->blobs_[0]->Disconnect(Blob<Dtype>::GRPWISE, group_);
+	}
+
+}
+
+template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   // Configure the kernel size, padding, stride, and inputs.
