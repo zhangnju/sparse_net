@@ -119,6 +119,12 @@ void Blob<Dtype>::set_gpu_data(Dtype* data) {
   }
   data_->set_gpu_data(data);
 }
+
+template <typename Dtype>
+const Dtype* Blob<Dtype>::cpu_connectivity() const {
+  CHECK(connectivity_);
+  return (const Dtype*)connectivity_->cpu_data();
+}
 template <typename Dtype>
 const Dtype* Blob<Dtype>::gpu_connectivity() const {
   CHECK(connectivity_);
