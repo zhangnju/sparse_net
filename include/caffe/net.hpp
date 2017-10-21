@@ -348,6 +348,8 @@ class Net {
   vector<Blob<Dtype>*> net_output_blobs_;
   /// The parameters in the network.
   vector<shared_ptr<Blob<Dtype> > > params_;
+  // The group of each parameter blob (for conv)
+  vector<int > param_groups_;//the groups for each learnable_params_
   vector<Blob<Dtype>*> learnable_params_;
   /**
    * The mapping from params_ -> learnable_params_: we have

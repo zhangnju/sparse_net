@@ -138,6 +138,29 @@ class Caffe {
   inline static curandGenerator_t curand_generator() {
     return Get().curand_generator_;
   }
+   //inline static cudaDeviceProp master_device_properties() { return Get().master_device_properties_; }
+  inline static int get_threads_per_block() {
+	  cudaDeviceProp prop;
+	  int device;
+	  if (cudaSuccess != cudaGetDevice(&device)) {
+		LOG(FATAL)<<"No cuda device present.";
+	    return CAFFE_CUDA_NUM_THREADS;
+	  }
+	  CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
+	  return prop.maxThreadsPerBlock;
+  }
+
+  //inline static cudaDeviceProp master_device_properties() { return Get().master_device_properties_; }
+  inline static int get_shared_mem_bytes_per_block() {
+	  cudaDeviceProp prop;
+	  int device;
+	  if (cudaSuccess != cudaGetDevice(&device)) {
+	    LOG(FATAL)<<"No cuda device present.";
+	    return 0;
+	  }
+	  CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
+	  return prop.sharedMemPerBlock;
+  }
 #endif
 
   // Returns the mode: running on CPU or GPU.
