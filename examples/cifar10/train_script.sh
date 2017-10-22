@@ -10,14 +10,14 @@ model_path="examples/cifar10/"
 
 if [ "$#" -lt 7 ]; then
 	echo "Illegal number of parameters"
-	echo "Usage: train_script base_lr weight_decay kernel_shape_decay breadth_decay block_group_decay device_id template_solver.prototxt [finetuned.caffemodel/.solverstate]"
+	echo "Usage: train_script base_lr weight_decay device_id template_solver.prototxt [finetuned.caffemodel/.solverstate]"
 	exit
 fi
 base_lr=$1
 weight_decay=$2
-kernel_shape_decay=$3
-breadth_decay=$4
-block_group_decay=$5
+#kernel_shape_decay=$3
+#breadth_decay=$4
+#block_group_decay=$5
 solver_mode="GPU"
 device_id=0
 
@@ -25,7 +25,7 @@ current_time=$(date)
 current_time=${current_time// /_}
 current_time=${current_time//:/-}
 
-snapshot_path=$folder/${base_lr}_${weight_decay}_${kernel_shape_decay}_${breadth_decay}_${block_group_decay}_${current_time}
+snapshot_path=$folder/${base_lr}_${weight_decay}_${current_time}
 mkdir $snapshot_path
 
 solverfile=$snapshot_path/solver.prototxt
@@ -35,9 +35,9 @@ template_file=$7
 #fi
 
 cat $folder/${template_file} > $solverfile
-echo "block_group_decay: $block_group_decay" >> $solverfile
-echo "kernel_shape_decay: $kernel_shape_decay" >> $solverfile
-echo "breadth_decay: $breadth_decay" >> $solverfile
+#echo "block_group_decay: $block_group_decay" >> $solverfile
+#echo "kernel_shape_decay: $kernel_shape_decay" >> $solverfile
+#echo "breadth_decay: $breadth_decay" >> $solverfile
 echo "weight_decay: $weight_decay" >> $solverfile
 echo "base_lr: $base_lr" >> $solverfile
 echo "snapshot_prefix: \"$snapshot_path/$file_prefix\"" >> $solverfile
