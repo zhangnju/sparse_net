@@ -8,7 +8,7 @@ file_prefix="cifar10_your_prefix"
 #file_prefix="cifar10_full"
 model_path="examples/cifar10/"
 
-if [ "$#" -lt 7 ]; then
+if [ "$#" -lt 4 ]; then
 	echo "Illegal number of parameters"
 	echo "Usage: train_script base_lr weight_decay device_id template_solver.prototxt [finetuned.caffemodel/.solverstate]"
 	exit
@@ -30,8 +30,8 @@ mkdir $snapshot_path
 
 solverfile=$snapshot_path/solver.prototxt
 template_file='template_solver.prototxt'
-#if [ "$#" -ge 7 ]; then
-template_file=$7
+#if [ "$#" -ge 4 ]; then
+template_file=$4
 #fi
 
 cat $folder/${template_file} > $solverfile
@@ -41,9 +41,9 @@ cat $folder/${template_file} > $solverfile
 echo "weight_decay: $weight_decay" >> $solverfile
 echo "base_lr: $base_lr" >> $solverfile
 echo "snapshot_prefix: \"$snapshot_path/$file_prefix\"" >> $solverfile
-#if [ "$#" -ge 6 ]; then
-if [ "$6" -ne "-1" ]; then
-	device_id=$6
+#if [ "$#" -ge 3 ]; then
+if [ "$3" -ne "-1" ]; then
+	device_id=$3
 	echo "device_id: $device_id" >> $solverfile
 else
 	solver_mode="CPU"
@@ -53,8 +53,8 @@ echo "solver_mode: $solver_mode" >> $solverfile
 #echo "regularization_type: \"$regularization_type\"" >> $solverfile
 #cat $solverfile
 
-if [ "$#" -ge 8 ]; then
-	tunedmodel=$8
+if [ "$#" -ge 5 ]; then
+	tunedmodel=$5
 	file_ext=$(echo ${tunedmodel} | rev | cut -d'.' -f 1 | rev)
 	if [ "$file_ext" = "caffemodel" ]; then
 	  ./build/tools/caffe train --solver=$solverfile --weights=$model_path/$tunedmodel  > "${snapshot_path}/train.info" 2>&1
