@@ -57,12 +57,12 @@ if [ "$#" -ge 8 ]; then
 	tunedmodel=$8
 	file_ext=$(echo ${tunedmodel} | rev | cut -d'.' -f 1 | rev)
 	if [ "$file_ext" = "caffemodel" ]; then
-	  ./build/tools/caffe.bin train --solver=$solverfile --weights=$model_path/$tunedmodel  > "${snapshot_path}/train.info" 2>&1
+	  ./build/tools/caffe train --solver=$solverfile --weights=$model_path/$tunedmodel  > "${snapshot_path}/train.info" 2>&1
 	else
-	  ./build/tools/caffe.bin train --solver=$solverfile --snapshot=$model_path/$tunedmodel > "${snapshot_path}/train.info" 2>&1
+	  ./build/tools/caffe train --solver=$solverfile --snapshot=$model_path/$tunedmodel > "${snapshot_path}/train.info" 2>&1
 	fi
 else
-	./build/tools/caffe.bin train --solver=$solverfile   > "${snapshot_path}/train.info" 2>&1
+	./build/tools/caffe train --solver=$solverfile   > "${snapshot_path}/train.info" 2>&1
 fi
 
 cat ${snapshot_path}/train.info | grep loss+ | awk '{print $8 " " $11}' > ${snapshot_path}/loss.info
