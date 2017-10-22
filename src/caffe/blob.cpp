@@ -200,6 +200,7 @@ template <typename Dtype>
 void Blob<Dtype>::Zerout(Dtype thre) {
   // Zero out elements whose values are smaller than thre.
   //Dtype thre = Dtype(ZEROUT_THRESHOLD);
+  #if 0
   Dtype* data_ptr_tmp = 0;
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
@@ -221,6 +222,7 @@ void Blob<Dtype>::Zerout(Dtype thre) {
   default:
     LOG(FATAL) << "Syncedmem not initialized.";
   }
+  #endif 
 }
 
 template <> unsigned int Blob<unsigned int>::asum_data() const {
