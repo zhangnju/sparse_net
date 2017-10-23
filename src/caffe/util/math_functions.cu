@@ -74,6 +74,52 @@ void caffe_gpu_axpy<double>(const int N, const double alpha, const double* X,
   CUBLAS_CHECK(cublasDaxpy(Caffe::cublas_handle(), N, &alpha, X, 1, Y, 1));
 }
 
+
+
+
+template  <typename Dtype>
+__global__ void zerout_kernel(void * mutable_gpu_data, int count, Dtype thre){
+	//Dtype thre = Dtype(th);
+	Dtype* data_ptr_tmp =  static_cast<Dtype*>(mutable_gpu_data);
+		//  for(int i=0;i<count;i++){
+		//	  if(data_ptr_tmp[i]<thre && data_ptr_tmp[i]>(-thre)){
+		//		  data_ptr_tmp[i]=0;
+		//	  }
+		//  }
+	int tid = threadIdx.x + blockDim.x*blockIdx.x;
+	while(tid<count){
+		if(data_ptr_tmp[tid]<thre && data_ptr_tmp[tid]>(-thre)){
+			data_ptr_tmp[tid] = 0;
+		}
+		tid += gridDim.x*blockDim.x;
+	}
+}
+
+template <typename Dtype>
+void caffe_gpu_zerout(void * mutable_gpu_data, const int count, Dtype th){
+	zerout_kernel<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(mutable_gpu_data,  count,  th);
+}
+
+template void caffe_gpu_zerout<int>(void * mutable_gpu_data, const int count, int th);
+template void caffe_gpu_zerout<unsigned int>(void * mutable_gpu_data, const int count, unsigned int th);
+template void caffe_gpu_zerout<float>(void * mutable_gpu_data, const int count, float th);
+template void caffe_gpu_zerout<double>(void * mutable_gpu_data, const int count, double th);
+
+//template <>
+//void caffe_gpu_zerout<int>(void * mutable_gpu_data, int count, int th){
+//	zerout_kernel<<<32768,256>>>(mutable_gpu_data,  count,  th);
+//}
+//
+//template <>
+//void caffe_gpu_zerout<float>(void * mutable_gpu_data, int count, float th){
+//	zerout_kernel<<<32768,256>>>(mutable_gpu_data,  count,  th);
+//}
+//
+//template <>
+//void caffe_gpu_zerout<double>(void * mutable_gpu_data, int count, double th){
+//	zerout_kernel<<<32768,256>>>(mutable_gpu_data,  count,  th);
+//}
+
 void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
   if (X != Y) {
     CUDA_CHECK(cudaMemcpy(Y, X, N, cudaMemcpyDefault));  // NOLINT(caffe/alt_fn)

@@ -906,7 +906,9 @@ void Net<Dtype>::ToHDF5(const string& filename, bool write_diff) const {
 template <typename Dtype>
 void Net<Dtype>::Update() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
+    Dtype thre = Dtype(ZEROUT_THRESHOLD);
     learnable_params_[i]->Update();
+    learnable_params_[i]->Zerout(thre);
   }
 }
 
