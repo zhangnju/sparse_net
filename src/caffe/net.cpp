@@ -907,10 +907,10 @@ template <typename Dtype>
 void Net<Dtype>::Update() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
     //Dtype thre = Dtype(ZEROUT_THRESHOLD);
-    Dtype thre= thres_.at(i);
-	LOG(INFO) <<"layer "<< layer_names_.at(i)<<" sparsity threshold is " <<thre;
+    //Dtype thre= thres_.at(i);
+    LOG(INFO) <<learnable_params_.size()<< "layer "<< layer_names_.at(i)<<" sparsity threshold is " ;
     learnable_params_[i]->Update();
-    learnable_params_[i]->Zerout(thre);
+    //learnable_params_[i]->Zerout(thre);
   }
 }
 
