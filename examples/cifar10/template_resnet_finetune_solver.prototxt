@@ -1,5 +1,5 @@
 # The train/test net protocol buffer definition
-net: "examples/cifar10/cifar10_resnet_n3_ft.prototxt"
+net: "examples/cifar10/cifar10_resnet_n3.prototxt"
 
 # test_iter specifies how many forward passes the test should carry out.
 # In the case of CIFAR10, we have test batch size 100 and 100 test iterations,
