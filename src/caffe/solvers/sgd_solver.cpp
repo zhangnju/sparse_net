@@ -84,8 +84,9 @@ void SGDSolver<Dtype>::PreSolve() {
     history_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
     update_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
     temp_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
-	thres_.push_back(Dtype(ZEROUT_THRESHOLD));
+    thres_.push_back(Dtype(ZEROUT_THRESHOLD));
   }
+ 
 }
 
 template <typename Dtype>
@@ -133,22 +134,22 @@ void SGDSolver<Dtype>::SparseThreshold(int param_id){
   const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
   const Dtype* weight = net_params[param_id]->cpu_data();
   int weight_size=net_params[param_id]->count();
-  int count=0;
+  //int count=0;
   Dtype mean=Dtype(0.);
   Dtype stdval=Dtype(0.);
   for(int id=0;id<weight_size;id++)
   {
   	mean+=fabs(weight[id]);
 	stdval+=weight[id]*weight[id];
-	if(weight[id]!=0)
-		count++;
+	//if(weight[id]!=0)
+	//	count++;
   }
-  if(count==0)
+  if(weight_size==0)
   	return;
   else
   {
-  	  mean/=count;stdval-=count*mean*mean;
-	  stdval/=count;stdval=sqrt(stdval);
+  	  mean/=weight_size;stdval-=weight_size*mean*mean;
+	  stdval/=weight_size;stdval=sqrt(stdval);
   }
   thres_[param_id]=0.9*std::max(mean+stdval,Dtype(ZEROUT_THRESHOLD));
 }

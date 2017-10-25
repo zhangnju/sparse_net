@@ -279,6 +279,7 @@ class Net {
   /// @brief The phase: TRAIN or TEST
   Phase phase_;
   vector<Dtype> thres_;
+  vector<bool> pruning_flag;
   /// @brief Individual layers in the net
   vector<shared_ptr<Layer<Dtype> > > layers_;
   vector<string> layer_names_;
