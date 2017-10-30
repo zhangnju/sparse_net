@@ -14,6 +14,9 @@ message BlobProto {
   repeated double double_data = 8 [packed = true];
   repeated double double_diff = 9 [packed = true];
 
+  repeated uint32 quant_data = 10 [packed = true];
+  repeated float  quant_table= 11 [packed = true];
+  optional uint32 table_size = 12 [default = 0];
   // 4D dimensions -- deprecated.  Use "shape" instead.
   optional int32 num = 1 [default = 0];
   optional int32 channels = 2 [default = 0];
@@ -332,6 +335,10 @@ message LayerParameter {
 
   // The blobs containing the numeric parameters of the layer.
   repeated BlobProto blobs = 7;
+  
+  //optional BlobProto quant_table = 301;
+  //repeated BlobProto quant_blobs = 302;
+  
 
   // Specifies whether to backpropagate to each bottom. If unspecified,
   // Caffe will automatically infer whether each input needs backpropagation
@@ -408,7 +415,7 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
-
+  optional TableInnerProductParameter table_inner_product_param = 300;
   optional RegionLossParameter region_loss_param = 200;
   optional ReorgParameter reorg_param = 201;
 }
@@ -881,6 +888,31 @@ message InnerProductParameter {
   // but rather the transfer flag of operations will be toggled accordingly.
   optional bool transpose = 6 [default = false];
 }
+message TableInnerProductParameter {
+  required int32 table_size = 12;
+
+  optional uint32 num_output = 1; // The number of outputs for the layer
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  optional FillerParameter weight_filler = 3; // The filler for the weight
+  optional FillerParameter bias_filler = 4; // The filler for the bias
+
+  // The first axis to be lumped into a single inner product computation;
+  // all preceding axes are retained in the output.
+  // May be negative to index from the end (e.g., -1 for the last axis).
+  optional int32 axis = 5 [default = 1];
+  // Specify whether to transpose the weight matrix or not.
+  // If transpose == true, any operations will be performed on the transpose
+  // of the weight matrix. The weight matrix itself is not going to be transposed
+  // but rather the transfer flag of operations will be toggled accordingly.
+  optional bool transpose = 6 [default = false];
+  enum Engine {
+    DEFAULT = 0;
+    CAFFE = 1;
+    CUDNN = 2;
+    MKLDNN = 3;
+  }
+  optional Engine engine = 7 [default = DEFAULT];
+}
 
 message InputParameter {
   // This layer produces N >= 1 top blob(s) to be assigned manually.
@@ -1309,6 +1341,7 @@ message V1LayerParameter {
     TANH = 23;
     WINDOW_DATA = 24;
     THRESHOLD = 31;
+    TABLE_INNER_PRODUCT = 50;
   }
   optional LayerType type = 5;
   repeated BlobProto blobs = 6;
