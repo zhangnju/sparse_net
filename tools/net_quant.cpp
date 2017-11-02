@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
      ::google::InitGoogleLogging(argv[0]);
      if (argc != 7) {
         LOG(ERROR) << "Usage: "
-        << "convert_inner_product_to_table <prototxt_in> <caffemodel_in> <prototxt_out> <caffemodel_out> <init_flags> <cluster_count>";
+        << "convert_inner_product_to_table <prototxt_in> <caffemodel_in> <prototxt_out> <caffemodel_out> <init_flags PP/RANDOM> <cluster_count>";
      return 1;
      }
 
@@ -72,7 +72,13 @@ int main(int argc, char** argv) {
      string caffemodel_out_filename(argv[4]);
      string initType(argv[5]);
      int cluster_count = atoi(argv[6]);
-
+     
+     cv::KmeansFlags flag;
+     if(initTypw=="PP")
+        flag=cv::KMEANS_PP_CENTERS;
+     else
+        flag=cv::KMEANS_RANDOM_CENTERS;
+    
      ReadNetParamsFromTextFileOrDie(prototxt_in_filename, &prototxt_net_param);
      ReadNetParamsFromBinaryFileOrDie(caffemodel_in_filename, &caffemodel_net_param);
   
@@ -123,7 +129,7 @@ int main(int argc, char** argv) {
                cv::Mat points(weights);
                cv::Mat labels,centers;
                cv::kmeans(points, cluster_count, labels, cv::TermCriteria( cv::TermCriteria::EPS+cv::TermCriteria::COUNT, 10, 1.0),
-               3, cv::KMEANS_PP_CENTERS, centers);
+               3, flag, centers);
                
 
                BlobProto* model_cluster_index_table_proto = caffemodel_layerParam->mutable_quant_table();

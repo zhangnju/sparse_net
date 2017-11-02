@@ -8,6 +8,7 @@
 #include "caffe/layer.hpp"
 #include "caffe/layer_factory.hpp"
 #include "caffe/layers/conv_layer.hpp"
+#include "caffe/layers/table_inner_product_layer.hpp"
 #include "caffe/layers/lrn_layer.hpp"
 #include "caffe/layers/pooling_layer.hpp"
 #include "caffe/layers/relu_layer.hpp"
@@ -73,6 +74,23 @@ shared_ptr<Layer<Dtype> > GetConvolutionLayer(
 
 REGISTER_LAYER_CREATOR(Convolution, GetConvolutionLayer);
 
+/*
+// Get inner_product layer according to engine.
+template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetTableInnerProductLayer(
+    const LayerParameter& param) {
+  TableInnerProductParameter ip_param = param.table_inner_product_param();
+  TableInnerProductParameter_Engine engine = ip_param.engine();
+
+  if (engine == TableInnerProductParameter_Engine_CAFFE) {
+    return shared_ptr<Layer<Dtype> >(new TableInnerProductLayer<Dtype>(param));
+  } else {
+    LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
+    throw;  // Avoids missing return warning
+  }
+}
+REGISTER_LAYER_CREATOR(TableInnerProduct, GetTableInnerProductLayer);
+*/
 // Get pooling layer according to engine.
 template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetPoolingLayer(const LayerParameter& param) {
