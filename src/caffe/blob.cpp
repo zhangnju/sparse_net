@@ -511,6 +511,22 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
       diff_vec[i] = proto.diff(i);
     }
   }
+  if(proto.quant_data_size()>0)//copy the quant data into data region,from int type to Dtype type
+  {
+    CHECK_EQ(count_, proto.quant_data_size());
+    for (int i = 0; i < count_; ++i) {
+      data_vec[i] = (Dtype)proto.quant_data(i);
+    }
+  }
+  if(proto.quant_table_size()>0)//copy the quant table 
+  {
+    quant_table_.resize(0);
+    for (int i = 0; i < proto.quant_table_size(); ++i) {
+      quant_table_.push_back(proto.quant_table(i));
+    }
+  }
+  if(proto.has_table_size())//set the quant table size 
+     quant_table_size=proto.table_size();
 }
 
 template <>
@@ -541,9 +557,24 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
   }
   proto->clear_data();
   proto->clear_diff();
+  proto->clear_quant_data();
+  proto->clear_quant_table();
   const float* data_vec = cpu_data();
+  if(quant_table_size>0)
+  {
+     proto->set_table_size(quant_table_size);
+     for (int i = 0; i < quant_table_size; ++i) {
+       proto->add_quant_table(quant_table_.at(i));
+     }
+     for (int i = 0; i < count_; ++i) {
+       proto->add_quant_data((unsigned int)data_vec[i]);//here we still need to copy the data in data region,not in quant data region
+     }
+  }
+  else
+  {
   for (int i = 0; i < count_; ++i) {
     proto->add_data(data_vec[i]);
+  }
   }
   if (write_diff) {
     const float* diff_vec = cpu_diff();

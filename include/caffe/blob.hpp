@@ -216,6 +216,19 @@ class Blob {
     return diff_;
   }
 
+  inline Dtype quant_table_data(const int index) const {
+    CHECK(index < quant_table_size);
+    return quant_table_.at(index);
+  }
+  
+  inline void set_quant_table_data(const int index, Dtype value){
+     CHECK(index < quant_table_size);
+     quant_table_.at(index)=value;
+  }
+
+  inline int get_quant_table_size() const{
+    return quant_table_size;
+  } 
   const Dtype* cpu_data() const;
   void set_cpu_data(Dtype* data);
   const int* gpu_shape() const;
@@ -231,6 +244,7 @@ class Blob {
   void FromProto(const BlobProto& proto, bool reshape = true);
   void ToProto(BlobProto* proto, bool write_diff = false) const;
 
+  
   /// @brief Compute the sum of absolute values (L1 norm) of the data.
   Dtype asum_data() const;
   /// @brief Compute the sum of absolute values (L1 norm) of the diff.
@@ -270,6 +284,8 @@ class Blob {
   shared_ptr<SyncedMemory> data_;
   shared_ptr<SyncedMemory> diff_;
   shared_ptr<SyncedMemory> shape_data_;
+  vector<Dtype> quant_table_;
+  int quant_table_size;
   vector<int> shape_;
   int count_;
   int capacity_;

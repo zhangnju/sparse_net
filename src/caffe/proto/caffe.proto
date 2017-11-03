@@ -15,7 +15,8 @@ message BlobProto {
   repeated double double_diff = 9 [packed = true];
 
   repeated uint32 quant_data = 10 [packed = true];
-
+  repeated float  quant_table= 11 [packed = true];
+  optional uint32 table_size = 12 [default = 0];
   // 4D dimensions -- deprecated.  Use "shape" instead.
   optional int32 num = 1 [default = 0];
   optional int32 channels = 2 [default = 0];
@@ -335,8 +336,8 @@ message LayerParameter {
   // The blobs containing the numeric parameters of the layer.
   repeated BlobProto blobs = 7;
   
-  optional BlobProto quant_table = 301;
-  repeated BlobProto quant_blobs = 302;
+  //optional BlobProto quant_table = 301;
+  //repeated BlobProto quant_blobs = 302;
   
 
   // Specifies whether to backpropagate to each bottom. If unspecified,

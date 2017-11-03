@@ -80,13 +80,13 @@ class TableInnerProductLayer : public Layer<Dtype> {
     vector<int> weight_shape;
     vector<int> bias_shape;
 
-    vector<shared_ptr<Blob<unsigned int> > > quant_blobs_;
+    //vector<shared_ptr<Blob<unsigned int> > > quant_blobs_;
     
     bool tmp_blobs_updated_;
     vector<shared_ptr<Blob<Dtype> > > tmp_blobs_;
     /** Index table blob. Each line contain cluster center value for its index */
-    shared_ptr<Blob<Dtype> > quant_table_;
-
+    //shared_ptr<Blob<Dtype> > quant_table_;
+    vector<Dtype> quant_table_;
     int table_size_;
 };
 

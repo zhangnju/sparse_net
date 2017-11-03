@@ -59,14 +59,14 @@ void TableInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& botto
      // and axis == 1, N inner products with dimension CHW are performed.
      K_ = bottom[0]->count(axis);
      // Check if we need to set up the weights
-     if (this->quant_blobs_.size() > 0) {
+     if (this->blobs_.size() > 0) {
         LOG(INFO) << "Skipping parameter initialization";
      } else {
         if (bias_term_) {
-          this->quant_blobs_.resize(2);
+          this->blobs_.resize(2);
           this->tmp_blobs_.resize(2);
         } else {
-          this->quant_blobs_.resize(1); 
+          this->blobs_.resize(1); 
           this->tmp_blobs_.resize(1);
         }
         //this->quant_table_.resize(1);
@@ -81,30 +81,26 @@ void TableInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& botto
           weight_shape[1] = K_;
         }
 
-        this->tmp_blobs_[0].reset(new Blob<Dtype>(weight_shape));
-        this->quant_blobs_[0].reset(new Blob<unsigned int>(weight_shape));
+        //this->tmp_blobs_[0].reset(new Blob<Dtype>(weight_shape));
+        this->blobs_[0].reset(new Blob<Dtype>(weight_shape));
 
         //shared_ptr<Filler<Dtype> > weight_filler(GetFiller<Dtype>(
         //   this->layer_param_.table_inner_product_param().weight_filler()));
         //weight_filler->Fill(this->quant_blobs_[0].get());
 
         // Resetting the codebook table
-        vector<int> table_shape(1, table_size_);
-        this->quant_table_.reset(new Blob<Dtype>(table_shape));	
-
+        //vector<int> table_shape(1, table_size_);
+        //this->quant_table_.reset(new Blob<Dtype>(table_shape));	
+        this->quant_table_.resize(table_size_);
         // If necessary, intiialize and fill the bias term
         if (bias_term_) {
           bias_shape = vector<int>(1, N_);
-          this->tmp_blobs_[1].reset(new Blob<Dtype>(bias_shape));
+          //this->tmp_blobs_[1].reset(new Blob<Dtype>(bias_shape));
           // Resetting the int bias blob
-          this->quant_blobs_[1].reset(new Blob<unsigned int>(bias_shape));
-
-         // shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
-         //    this->layer_param_.table_inner_product_param().bias_filler()));
-         // bias_filler->Fill(this->quant_blobs_[1].get());
+          this->blobs_[1].reset(new Blob<Dtype>(bias_shape));
         }
     }  // parameter initialization
-    this->param_propagate_down_.resize(this->quant_blobs_.size(), true);
+    this->param_propagate_down_.resize(this->blobs_.size(), true);
 }
 
 template <typename Dtype>
@@ -139,17 +135,21 @@ template <typename Dtype>
 void TableInnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
     if (!tmp_blobs_updated_) {
-          tmp_blobs_.resize(this->quant_blobs_.size());
-          for (size_t bi = 0; bi < this->quant_blobs_.size(); bi++) {
-              tmp_blobs_[bi].reset(new Blob<Dtype>(this->quant_blobs_[bi]->shape()));
+          CHECK_EQ(table_size_, this->blobs_[0]->get_quant_table_size());
+          for(int i=0; i<table_size_;i++)
+             quant_table_.at(i)=this->blobs_[0]->quant_table_data(i);
+          
+          tmp_blobs_.resize(this->blobs_.size());
+          for (size_t bi = 0; bi < this->blobs_.size(); bi++) {
+              tmp_blobs_[bi].reset(new Blob<Dtype>(this->blobs_[bi]->shape()));
 	      size_t weight_mul = 1;
-	      for (size_t i = 0; i < this->quant_blobs_[bi]->shape().size(); i++) {
-		  weight_mul *= this->quant_blobs_[bi]->shape()[i];
+	      for (size_t i = 0; i < this->blobs_[bi]->shape().size(); i++) {
+		  weight_mul *= this->blobs_[bi]->shape()[i];
 	      }
               for (size_t k = 0; k < weight_mul; k++) {
 	          // Putting the value into the table
-                  unsigned int index = this->quant_blobs_[bi]->cpu_data()[k];
-                  tmp_blobs_[bi]->mutable_cpu_data()[k] = this->quant_table_->cpu_data()[index];
+                  unsigned int index = (unsigned int)this->blobs_[bi]->cpu_data()[k];
+                  tmp_blobs_[bi]->mutable_cpu_data()[k] = quant_table_.at(index);
               }
 	  }
      tmp_blobs_updated_ = true;
@@ -170,23 +170,23 @@ template <typename Dtype>
 void TableInnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
 
-      size_t weight_mul = 1;
-      for (size_t bi = 0; bi < this->quant_blobs_.size(); bi++) {
-        for (size_t i = 0; i < this->quant_blobs_[bi]->shape().size(); i++) {
-	  weight_mul *= this->quant_blobs_[bi]->shape()[i];
-        }
-      }
-
       if (!tmp_blobs_updated_) {
-	    tmp_blobs_.resize(this->quant_blobs_.size());
-            for (size_t bi = 0; bi < this->quant_blobs_.size(); bi++) {
-		tmp_blobs_[bi].reset(new Blob<Dtype>(this->quant_blobs_[bi]->shape()));
-                
+            CHECK_EQ(table_size_, this->blobs_[0]->get_quant_table_size());
+            for(int i=0; i<table_size_;i++)
+               quant_table_.at(i)=this->blobs_[0]->quant_table_data(i);
 
+	    tmp_blobs_.resize(this->blobs_.size());
+            for (size_t bi = 0; bi < this->blobs_.size(); bi++) {
+		tmp_blobs_[bi].reset(new Blob<Dtype>(this->blobs_[bi]->shape()));
+                
+                size_t weight_mul = 1;
+	        for (size_t i = 0; i < this->blobs_[bi]->shape().size(); i++) {
+		  weight_mul *= this->blobs_[bi]->shape()[i];
+	        }
 	        for (size_t k = 0; k < weight_mul; k++) {
 		    // Putting the value into the table
-                    unsigned int index = this->quant_blobs_[bi]->cpu_data()[k];
-		    tmp_blobs_[bi]->mutable_cpu_data()[k] = this->quant_table_->cpu_data()[index];
+                    unsigned int index = (unsigned int)this->blobs_[bi]->cpu_data()[k];
+		    tmp_blobs_[bi]->mutable_cpu_data()[k] = quant_table_.at(index);
 	        }
 	    }
             tmp_blobs_updated_ = true;
@@ -221,9 +221,13 @@ void TableInnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top
       //calculate gradients for cluster centers
       if (this->param_propagate_down_[0]) {
 	 const Dtype* tmp_blobs_diff = this->tmp_blobs_[0]->cpu_diff();
+         size_t weight_mul = 1;
+	 for (size_t i = 0; i < this->blobs_[0]->shape().size(); i++) {
+		 weight_mul *= this->blobs_[0]->shape()[i];
+	 }
          for(int i=0; i < weight_mul; i++){
-		int index = this->quant_blobs_[0]->cpu_data()[i];
-		this->quant_table_->mutable_cpu_diff()[index]+=tmp_blobs_diff[i];
+		int index = (int)this->blobs_[0]->cpu_data()[i];
+		this->quant_table_.at(index)+=tmp_blobs_diff[i];
 	 }	
          //memset(this->blobs_[0]->mutable_cpu_diff(), 0, this->blobs_[0]->count()*sizeof(Dtype));
 	 //memset(this->int_blobs_[0]->mutable_cpu_diff(), 0, this->int_blobs_[0]->count()*sizeof(int));
@@ -232,9 +236,13 @@ void TableInnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top
 
        if (bias_term_ && this->param_propagate_down_[1]) {
 	  const Dtype* tmp_blobs_diff = this->tmp_blobs_[1]->cpu_diff();
+          size_t weight_mul = 1;
+	  for (size_t i = 0; i < this->blobs_[1]->shape().size(); i++) {
+		 weight_mul *= this->blobs_[1]->shape()[i];
+	  }
           for(int i=0; i < weight_mul; i++){
-		int index = this->quant_blobs_[1]->cpu_data()[i];
-		this->quant_table_->mutable_cpu_diff()[index]+=tmp_blobs_diff[i];
+		int index = (int)this->blobs_[1]->cpu_data()[i];
+		this->quant_table_.at(index)+=tmp_blobs_diff[i];
 	  }
 	//memset(this->blobs_[1]->mutable_cpu_diff(), 0, this->blobs_[1]->count()*sizeof(Dtype));
 	//memset(this->int_blobs_[1]->mutable_cpu_diff(), 0, this->int_blobs_[1]->count()*sizeof(int));
@@ -257,6 +265,11 @@ void TableInnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top
 
        //memset(this->tmp_blobs_[0]->mutable_cpu_diff(), 0, this->tmp_blobs_[0]->count()*sizeof(Dtype));
        //memset(this->tmp_blobs_[1]->mutable_cpu_diff(), 0, this->tmp_blobs_[1]->count()*sizeof(Dtype));
+     }
+     for(int i=0; i<table_size_;i++)
+     {
+          this->blobs_[0]->set_quant_table_data(i,quant_table_.at(i));
+          this->blobs_[1]->set_quant_table_data(i,quant_table_.at(i));
      }
 }
 

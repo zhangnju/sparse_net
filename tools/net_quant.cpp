@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
      string initType(argv[5]);
      int cluster_count = atoi(argv[6]);
      
-     cv::KmeansFlags flag;
+     int flag;
      if(initType=="PP")
         flag=cv::KMEANS_PP_CENTERS;
      else
@@ -85,8 +85,8 @@ int main(int argc, char** argv) {
      //NetParameter targetNetParam;
      for (int i = 0; i < caffemodel_net_param.layer_size(); i++) {
 	      LayerParameter* caffemodel_layerParam = caffemodel_net_param.mutable_layer(i);
-          string caffemodel_layer_name = caffemodel_layerParam->name();
-          LayerParameter* prototxt_layerParam = NULL;
+              string caffemodel_layer_name = caffemodel_layerParam->name();
+              LayerParameter* prototxt_layerParam = NULL;
 		  
 	      for (int j = 0; j < prototxt_net_param.layer_size(); j++) {
 	         LayerParameter* other_prototxt_layer_param = prototxt_net_param.mutable_layer(j);
@@ -105,67 +105,72 @@ int main(int argc, char** argv) {
 
 	      LOG(INFO) << caffemodel_layer_name;
 	      if (caffemodel_layerParam->type() == "InnerProduct") {
-               const InnerProductParameter& innerProductParam = caffemodel_layerParam->inner_product_param();
-               LOG(INFO) << "Found InnerProduct layer. Converting to TableInnerProduct";
+                   const InnerProductParameter& innerProductParam = caffemodel_layerParam->inner_product_param();
+                   LOG(INFO) << "Found InnerProduct layer. Converting to TableInnerProduct";
 
 	           TableInnerProductParameter* caffemodel_tableInnerProductParam = caffemodel_layerParam->mutable_table_inner_product_param();
 	           TableInnerProductParameter* prototxt_tableInnerProductParam = prototxt_layerParam->mutable_table_inner_product_param();
-			   caffemodel_tableInnerProductParam->set_type("TableInnerProduct");
-	           prototxt_tableInnerProductParam->set_type("TableInnerProduct");
-               caffemodel_tableInnerProductParam->set_num_output(innerProductParam.num_output());
+	           caffemodel_layerParam->set_type("TableInnerProduct");
+	           prototxt_layerParam->set_type("TableInnerProduct");
+                   caffemodel_tableInnerProductParam->set_num_output(innerProductParam.num_output());
 	           prototxt_tableInnerProductParam->set_num_output(innerProductParam.num_output());
             
 	           vector<float> weights;
-               for (size_t bi = 0; bi < caffemodel_layerParam->blobs_size(); bi++) {
-			   	  size_t weight_mul = 1;
+                   for (size_t bi = 0; bi < caffemodel_layerParam->blobs_size(); bi++) {
+			  size_t weight_mul = 1;
 		          for (size_t i = 0; i < caffemodel_layerParam->blobs(bi).shape().dim_size(); i++) {
 			            weight_mul *= caffemodel_layerParam->blobs(bi).shape().dim(i);
 		          }
-                  for (size_t k = 0; k < weight_mul; k++) {
+                       for (size_t k = 0; k < weight_mul; k++) {
                        weights.push_back(caffemodel_layerParam->blobs(bi).data(k));
-                  }
-               }
+                     }
+                   }
        
                cv::Mat points(weights);
                cv::Mat labels,centers;
                cv::kmeans(points, cluster_count, labels, cv::TermCriteria( cv::TermCriteria::EPS+cv::TermCriteria::COUNT, 10, 1.0),
                3, flag, centers);
                
-
-               BlobProto* model_cluster_index_table_proto = caffemodel_tableInnerProductParam->mutable_quant_table();
+               /*
+               BlobProto* model_cluster_index_table_proto = caffemodel_layerParam->mutable_quant_table();
 	           model_cluster_index_table_proto->mutable_shape()->mutable_dim()->Add(cluster_count);
 	           for (size_t k = 0; k < cluster_count; k++) {
 		         model_cluster_index_table_proto->add_data(centers.at<float>(k));
 	           }
-
+               */
+               
                size_t offset=0;
                for (size_t bi = 0; bi < caffemodel_layerParam->blobs_size(); bi++) {
-                    BlobProto* new_blob = caffemodel_tableInnerProductParam->mutable_quant_blobs()->Add();
-                    *new_blob->mutable_shape() = caffemodel_layerParam->blobs(bi).shape();
+                    //BlobProto* new_blob = caffemodel_layerParam->mutable_quant_blobs()->Add();
+                    //*new_blob->mutable_shape() = caffemodel_layerParam->blobs(bi).shape();
 
                     size_t weight_mul = 1;
-		            for (size_t i = 0; i < caffemodel_layerParam->blobs(bi).shape().dim_size(); i++) {
-			           weight_mul *= caffemodel_layerParam->blobs(bi).shape().dim(i);
-		            }
+		    for (size_t i = 0; i < caffemodel_layerParam->blobs(bi).shape().dim_size(); i++) {
+			   weight_mul *= caffemodel_layerParam->blobs(bi).shape().dim(i);
+		    }
                     for (size_t k = 0; k < weight_mul; k++) {
-                       (*new_blob).add_quant_data(labels.at<int>((int)(offset+k))); 
+                           caffemodel_layerParam->mutable_blobs(bi)->add_quant_data(labels.at<int>((int)(offset+k))); 
                     }
                     offset+=weight_mul;
+                    for (size_t k = 0; k < cluster_count; k++) {
+		         caffemodel_layerParam->mutable_blobs(bi)->add_quant_table(centers.at<float>(k));
+	            }
+                    caffemodel_layerParam->mutable_blobs(bi)->set_table_size(cluster_count);
+                    caffemodel_layerParam->mutable_blobs(bi)->clear_data();
                }
                
-	           caffemodel_layerParam->clear_blobs();
-
-               caffemodel_tableInnerProductParam->set_table_size(cluster_count);
+	          //caffemodel_layerParam->clear_blobs();
+                   
+                  
+                   caffemodel_tableInnerProductParam->set_table_size(cluster_count);
 	           prototxt_tableInnerProductParam->set_table_size(cluster_count);
 
 	           // Removing the source float values
 	           caffemodel_layerParam->clear_inner_product_param();
 	           prototxt_layerParam->clear_inner_product_param();
 
-	           caffemodel_layerParam->mutable_param()->Clear();
-			   caffemodel_layerParam->mutable_param()=caffemodel_tableInnerProductParam;
-	           prototxt_layerParam->mutable_param()->Clear();
-			   prototxt_layerParam->mutable_param()=prototxt_tableInnerProductParam
+	           //caffemodel_layerParam->mutable_param()->Clear();
+	           //prototxt_layerParam->mutable_param()->Clear();
         }
     }
 
