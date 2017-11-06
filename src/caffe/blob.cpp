@@ -561,9 +561,9 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_quant_table();
   const float* data_vec = cpu_data();
   if(quant_table_size>0)
-  {
+  {  
      proto->set_table_size(quant_table_size);
-     for (int i = 0; i < quant_table_size; ++i) {
+     for (int i = 0; i < quant_table_.size(); ++i) {
        proto->add_quant_table(quant_table_.at(i));
      }
      for (int i = 0; i < count_; ++i) {
@@ -572,9 +572,9 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
   }
   else
   {
-  for (int i = 0; i < count_; ++i) {
-    proto->add_data(data_vec[i]);
-  }
+    for (int i = 0; i < count_; ++i) {
+      proto->add_data(data_vec[i]);
+    }
   }
   if (write_diff) {
     const float* diff_vec = cpu_diff();
