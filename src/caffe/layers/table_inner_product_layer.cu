@@ -49,7 +49,6 @@ void TableInnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bott
           CHECK_EQ(table_size_, this->blobs_[0]->get_quant_table_size());
           for(int i=0; i<table_size_;i++)
              quant_table_.at(i)=this->blobs_[0]->quant_table_data(i);
-          
           tmp_blobs_.resize(this->blobs_.size());
           for (size_t bi = 0; bi < this->blobs_.size(); bi++) {
               tmp_blobs_[bi].reset(new Blob<Dtype>(this->blobs_[bi]->shape()));

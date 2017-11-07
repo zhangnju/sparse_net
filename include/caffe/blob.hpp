@@ -217,17 +217,17 @@ class Blob {
   }
 
   inline Dtype quant_table_data(const int index) const {
-    CHECK(index < quant_table_size);
+    CHECK(index < quant_table_size_);
     return quant_table_.at(index);
   }
   
   inline void set_quant_table_data(const int index, Dtype value){
-     CHECK(index < quant_table_size);
+     CHECK(index < quant_table_size_);
      quant_table_.at(index)=value;
   }
 
   inline int get_quant_table_size() const{
-    return quant_table_size;
+    return quant_table_size_;
   } 
   const Dtype* cpu_data() const;
   void set_cpu_data(Dtype* data);
@@ -285,7 +285,7 @@ class Blob {
   shared_ptr<SyncedMemory> diff_;
   shared_ptr<SyncedMemory> shape_data_;
   vector<Dtype> quant_table_;
-  int quant_table_size;
+  int quant_table_size_;
   vector<int> shape_;
   int count_;
   int capacity_;

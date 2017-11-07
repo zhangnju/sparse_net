@@ -63,14 +63,14 @@ template <typename Dtype>
 Blob<Dtype>::Blob(const int num, const int channels, const int height,
     const int width)
   // capacity_ must be initialized before calling Reshape
-  : capacity_(0) {
+  : capacity_(0),quant_table_size_(0) {
   Reshape(num, channels, height, width);
 }
 
 template <typename Dtype>
 Blob<Dtype>::Blob(const vector<int>& shape)
   // capacity_ must be initialized before calling Reshape
-  : capacity_(0) {
+  : capacity_(0),quant_table_size_(0) {
   Reshape(shape);
 }
 
@@ -526,7 +526,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
     }
   }
   if(proto.has_table_size())//set the quant table size 
-     quant_table_size=proto.table_size();
+     quant_table_size_=proto.table_size();
 }
 
 template <>
@@ -560,9 +560,9 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_quant_data();
   proto->clear_quant_table();
   const float* data_vec = cpu_data();
-  if(quant_table_size>0)
+  if(quant_table_size_>0)
   {  
-     proto->set_table_size(quant_table_size);
+     proto->set_table_size(quant_table_size_);
      for (int i = 0; i < quant_table_.size(); ++i) {
        proto->add_quant_table(quant_table_.at(i));
      }
