@@ -151,7 +151,7 @@ void SGDSolver<Dtype>::SparseThreshold(int param_id){
   	  mean/=weight_size;stdval-=weight_size*mean*mean;
 	  stdval/=weight_size;stdval=sqrt(stdval);
   }
-  thres_[param_id]=0.9*std::max(mean+stdval,Dtype(ZEROUT_THRESHOLD));
+  thres_[param_id]=0.9*std::min(mean+stdval,Dtype(ZEROUT_THRESHOLD));
 }
 
 
