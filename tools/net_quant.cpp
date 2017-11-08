@@ -126,9 +126,11 @@ int main(int argc, char** argv) {
 		           }
                           }
                           else
+                          {
                              weight_mul=caffemodel_layerParam->blobs(bi).num()*caffemodel_layerParam->blobs(bi).height()*caffemodel_layerParam->blobs(bi).channels()*caffemodel_layerParam->blobs(bi).width();
-                       for (size_t k = 0; k < weight_mul; k++) {
-                       weights.push_back(caffemodel_layerParam->blobs(bi).data(k));
+                          }
+                          for (size_t k = 0; k < weight_mul; k++) {
+                            weights.push_back(caffemodel_layerParam->blobs(bi).data(k));
                      }
                    }
        
@@ -157,9 +159,16 @@ int main(int argc, char** argv) {
                     //*new_blob->mutable_shape() = caffemodel_layerParam->blobs(bi).shape();
 
                     size_t weight_mul = 1;
-		    for (size_t i = 0; i < caffemodel_layerParam->blobs(bi).shape().dim_size(); i++) {
+                    if(caffemodel_layerParam->blobs(bi).shape().dim_size()!=0)
+                    {
+		      for (size_t i = 0; i < caffemodel_layerParam->blobs(bi).shape().dim_size(); i++) {
 			   weight_mul *= caffemodel_layerParam->blobs(bi).shape().dim(i);
-		    }
+		      }
+                    }
+                    else
+                    {
+                       weight_mul=caffemodel_layerParam->blobs(bi).num()*caffemodel_layerParam->blobs(bi).height()*caffemodel_layerParam->blobs(bi).channels()*caffemodel_layerParam->blobs(bi).width();
+                    }
                     for (size_t k = 0; k < weight_mul; k++) {
                            caffemodel_layerParam->mutable_blobs(bi)->add_quant_data(labels.at<int>((int)(offset+k))); 
                     }
@@ -170,7 +179,7 @@ int main(int argc, char** argv) {
                     caffemodel_layerParam->mutable_blobs(bi)->set_table_size(cluster_count);
                     caffemodel_layerParam->mutable_blobs(bi)->clear_data();
                }
-               
+               //LOG(INFO)<<"quant data size "<<offset;
 	          //caffemodel_layerParam->clear_blobs();
                    
                   
