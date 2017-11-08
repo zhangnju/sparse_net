@@ -100,7 +100,8 @@ int main(int argc, char** argv) {
 
 	      if (prototxt_layerParam == NULL) {
 	        LOG(WARNING) << "Layer not found: "<< caffemodel_layer_name;
-	        return 2;
+                continue;
+	        //return 2;
 	      }
 
 	      LOG(INFO) << caffemodel_layer_name;
@@ -117,18 +118,29 @@ int main(int argc, char** argv) {
             
 	           vector<float> weights;
                    for (size_t bi = 0; bi < caffemodel_layerParam->blobs_size(); bi++) {
-			  size_t weight_mul = 1;
-		          for (size_t i = 0; i < caffemodel_layerParam->blobs(bi).shape().dim_size(); i++) {
+			  size_t weight_mul = 1; 
+                          if(caffemodel_layerParam->blobs(bi).shape().dim_size()!=0)
+                          {
+		           for (size_t i = 0; i < caffemodel_layerParam->blobs(bi).shape().dim_size(); i++) {
 			            weight_mul *= caffemodel_layerParam->blobs(bi).shape().dim(i);
-		          }
+		           }
+                          }
+                          else
+                             weight_mul=caffemodel_layerParam->blobs(bi).num()*caffemodel_layerParam->blobs(bi).height()*caffemodel_layerParam->blobs(bi).channels()*caffemodel_layerParam->blobs(bi).width();
                        for (size_t k = 0; k < weight_mul; k++) {
                        weights.push_back(caffemodel_layerParam->blobs(bi).data(k));
                      }
                    }
        
-               cv::Mat points(weights);
+               //cv::Mat points(weights);
+               if(weights.size() <= cluster_count)
+               {
+                 LOG(ERROR)<<"weight size in this layer is less than cluster count: "<<weights.size();
+                 continue;
+               }
+       
                cv::Mat labels,centers;
-               cv::kmeans(points, cluster_count, labels, cv::TermCriteria( cv::TermCriteria::EPS+cv::TermCriteria::COUNT, 10, 1.0),
+               cv::kmeans(cv::Mat(weights).reshape(1, weights.size()), cluster_count, labels, cv::TermCriteria( cv::TermCriteria::EPS+cv::TermCriteria::COUNT, 10, 1.0),
                3, flag, centers);
                
                /*
