@@ -56,11 +56,13 @@ void TableInnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bott
 	      for (size_t i = 0; i < this->blobs_[bi]->shape().size(); i++) {
 		  weight_mul *= this->blobs_[bi]->shape()[i];
 	      }
+              
               for (size_t k = 0; k < weight_mul; k++) {
 	          // Putting the value into the table
-                  unsigned int index = (unsigned int)this->blobs_[bi]->gpu_data()[k];
-                  tmp_blobs_[bi]->mutable_gpu_data()[k] = quant_table_.at(index);
+                  unsigned int index = (unsigned int)this->blobs_[bi]->cpu_data()[k];
+                  tmp_blobs_[bi]->mutable_cpu_data()[k] = quant_table_.at(index);
               }
+             
 	  }
      tmp_blobs_updated_ = true;
     }
@@ -79,7 +81,6 @@ void TableInnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bott
 template <typename Dtype>
 void TableInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-
       if (!tmp_blobs_updated_) {
             CHECK_EQ(table_size_, this->blobs_[0]->get_quant_table_size());
             for(int i=0; i<table_size_;i++)
@@ -101,7 +102,7 @@ void TableInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top
 	    }
             tmp_blobs_updated_ = true;
        }
-
+       
        if (this->param_propagate_down_[0]) {
 	    const Dtype* top_diff = top[0]->gpu_diff();
 	    const Dtype* bottom_data = bottom[0]->gpu_data();
@@ -119,7 +120,7 @@ void TableInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top
 			  (Dtype)1., this->tmp_blobs_[0]->mutable_gpu_diff());
 	   }
        }
-
+      
       if (bias_term_ && this->param_propagate_down_[1]) {
          const Dtype* top_diff = top[0]->gpu_diff();
          // Gradient with respect to bias
@@ -127,31 +128,31 @@ void TableInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top
             bias_multiplier_.gpu_data(), (Dtype)1.,
             this->tmp_blobs_[1]->mutable_gpu_diff());
       }
-
+       
        //calculate gradients for cluster centers
       if (this->param_propagate_down_[0]) {
-	 const Dtype* tmp_blobs_diff = this->tmp_blobs_[0]->gpu_diff();
+	 const Dtype* tmp_blobs_diff = this->tmp_blobs_[0]->cpu_diff();
          size_t weight_mul = 1;
 	 for (size_t i = 0; i < this->blobs_[0]->shape().size(); i++) {
 		 weight_mul *= this->blobs_[0]->shape()[i];
 	 }
          for(int i=0; i < weight_mul; i++){
-		int index = (int)this->blobs_[0]->gpu_data()[i];
+		int index = (int)this->blobs_[0]->cpu_data()[i];
 		this->quant_table_.at(index)+=tmp_blobs_diff[i];
 	 }	
          //memset(this->blobs_[0]->mutable_cpu_diff(), 0, this->blobs_[0]->count()*sizeof(Dtype));
 	 //memset(this->int_blobs_[0]->mutable_cpu_diff(), 0, this->int_blobs_[0]->count()*sizeof(int));
 		
        }
-
+       
        if (bias_term_ && this->param_propagate_down_[1]) {
-	  const Dtype* tmp_blobs_diff = this->tmp_blobs_[1]->gpu_diff();
+	  const Dtype* tmp_blobs_diff = this->tmp_blobs_[1]->cpu_diff();
           size_t weight_mul = 1;
 	  for (size_t i = 0; i < this->blobs_[1]->shape().size(); i++) {
 		 weight_mul *= this->blobs_[1]->shape()[i];
 	  }
           for(int i=0; i < weight_mul; i++){
-		int index = (int)this->blobs_[1]->gpu_data()[i];
+		int index = (int)this->blobs_[1]->cpu_data()[i];
 		this->quant_table_.at(index)+=tmp_blobs_diff[i];
 	  }
 	//memset(this->blobs_[1]->mutable_cpu_diff(), 0, this->blobs_[1]->count()*sizeof(Dtype));
