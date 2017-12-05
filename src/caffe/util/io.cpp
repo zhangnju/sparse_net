@@ -1,4 +1,8 @@
 #include <fcntl.h>
+#include <boost/filesystem.hpp>
+#include <boost/foreach.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -23,6 +27,7 @@ const int kProtoReadBytesLimit = INT_MAX;  // Max size of 2 GB minus 1 byte.
 
 namespace caffe {
 
+using namespace boost::property_tree;
 using google::protobuf::io::FileInputStream;
 using google::protobuf::io::FileOutputStream;
 using google::protobuf::io::ZeroCopyInputStream;
@@ -70,6 +75,63 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
 }
 
 #ifdef USE_OPENCV
+cv::Mat LetterboxImageToCVMat(const string& filename, int width, int height,
+    int *ori_w, int *ori_h) {
+  cv::Mat cv_img;
+  cv::Mat cv_img_origin = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
+  if (!cv_img_origin.data) {
+    LOG(ERROR) << "Could not open or find file " << filename;
+    return cv_img_origin;
+  }
+  *ori_w = cv_img_origin.cols;
+  *ori_h = cv_img_origin.rows;
+
+  // letterbox image size
+  int new_w = 0;
+  int new_h = 0;
+  if (((float)width / *ori_w) < ((float)height / *ori_h)) {
+    new_w = width;
+    new_h = (int)((float)*ori_h * width / *ori_w);
+  } else {
+    new_h = height;
+    new_w = (int)((float)*ori_w * height / *ori_h);
+  }
+
+  // letterbox image
+  cv::Mat resized;
+  if (new_w != *ori_w || new_h != *ori_h) {
+    resize(cv_img_origin, resized, cv::Size(new_w, new_h));
+  } else {
+    resized = cv_img_origin;
+  }
+  cv::Mat boxed = cv::Mat::ones(height, width, CV_8UC3);
+  boxed.setTo(cv::Scalar(127, 127, 127));
+  resized.copyTo(boxed(cv::Rect((width - new_w) / 2, (height - new_h) / 2, new_w, new_h)));
+
+  return boxed;
+}
+
+cv::Mat ReadImageToCVMat(const string& filename,
+    const int height, const int width, const bool is_color,
+    int* ori_w, int* ori_h) {
+  cv::Mat cv_img;
+  int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
+    CV_LOAD_IMAGE_GRAYSCALE);
+  cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
+  if (!cv_img_origin.data) {
+    LOG(ERROR) << "Could not open or find file " << filename;
+    return cv_img_origin;
+  }
+  *ori_w = cv_img_origin.cols;
+  *ori_h = cv_img_origin.rows;
+  if (height > 0 && width > 0) {
+    cv::resize(cv_img_origin, cv_img, cv::Size(width, height));
+  } else {
+    cv_img = cv_img_origin;
+  }
+  return cv_img;
+}
+
 cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width, const bool is_color) {
   cv::Mat cv_img;
@@ -140,7 +202,116 @@ bool ReadImageToDatum(const string& filename, const int label,
     return false;
   }
 }
+
+bool ReadBoxDataToDatum(const string& filename, const string& annoname,
+    const map<string, int>& label_map, const int height, const int width,
+    const std::string & encoding, Datum* datum) {
+  int ori_w, ori_h;
+  cv::Mat cv_img = LetterboxImageToCVMat(filename, width, height, &ori_w, &ori_h);
+  if (cv_img.data) {
+    if (encoding.size()) {
+      std::vector<uchar> buf;
+      cv::imencode("." + encoding, cv_img, buf);
+      datum->set_data(std::string(reinterpret_cast<char*>(&buf[0]), buf.size()));
+      datum->set_encoded(true);
+    } else {
+      CVMatToDatum(cv_img, datum);
+    }
+    // read xml anno data
+    ParseXmlToDatum(annoname, label_map, ori_w, ori_h, width, height, datum);
+    return true;
+  } else {
+    return false;
+  }
+}
 #endif  // USE_OPENCV
+
+int name_to_label(const string& name, const map<string, int>& label_map) {
+  map<string, int>::const_iterator it = label_map.find(name);
+  if (it == label_map.end())
+    return -1;
+  else
+    return it->second;
+}
+
+void pos_to_letterbox(int ori_w, int ori_h, int new_w, int new_h, vector<float> &box) {
+  if (((float)new_w / ori_w) < ((float)new_h / ori_h)) {
+    int win_h = (int)((float)ori_h * new_w / ori_w);
+    // keep x/w ratio, change y/h ratio
+    box[1] = (box[1] * win_h + (new_h - win_h) / 2) / new_h;
+    box[3] = box[3] * win_h / new_h;
+  } else {
+    int win_w = (int)((float)ori_w * new_h / ori_h);
+    // keep y/h ratio, change x/w ratio
+    box[0] = (box[0] * win_w + (new_w - win_w) / 2) / new_w;
+    box[2] = box[2] * win_w / new_w;
+  }
+}
+
+void ParseXmlToDatum(const string& annoname, const map<string, int>& label_map,
+    int ori_w, int ori_h, int new_w, int new_h, Datum* datum) {
+  ptree pt;
+  read_xml(annoname, pt);
+  int width(0), height(0);
+  try {
+    height = pt.get<int>("annotation.size.height");
+    width = pt.get<int>("annotation.size.width");
+    CHECK_EQ(ori_w, width);
+    CHECK_EQ(ori_h, height);
+  } catch (const ptree_error &e) {
+    LOG(WARNING) << "When paring " << annoname << ": " << e.what();
+  }
+  datum->clear_float_data();
+  BOOST_FOREACH(ptree::value_type &v1, pt.get_child("annotation")) {
+    if (v1.first == "object") {
+      ptree object = v1.second;
+      int label(-1);
+      vector<float> box(4, 0);
+      int difficult(0);
+      BOOST_FOREACH(ptree::value_type &v2, object.get_child("")) {
+        ptree pt2 = v2.second;
+        if (v2.first == "name") {
+          string name = pt2.data();
+          // map name to label
+          label = name_to_label(name, label_map);
+          if (label < 0) {
+            LOG(FATAL) << "Anno file " << annoname << " -> unknown name: " << name;
+          }
+        } else if (v2.first == "bndbox") {
+          int xmin = pt2.get("xmin", 0);
+          int ymin = pt2.get("ymin", 0);
+          int xmax = pt2.get("xmax", 0);
+          int ymax = pt2.get("ymax", 0);
+          LOG_IF(WARNING, xmin < 0 || xmin > ori_w) << annoname <<
+              " bounding box exceeds image boundary";
+          LOG_IF(WARNING, xmax < 0 || xmax > ori_w) << annoname <<
+              " bounding box exceeds image boundary";
+          LOG_IF(WARNING, ymin < 0 || ymin > ori_h) << annoname <<
+              " bounding box exceeds image boundary";
+          LOG_IF(WARNING, ymax < 0 || ymax > ori_h) << annoname <<
+              " bounding box exceeds image boundary";
+          LOG_IF(WARNING, xmin > xmax) << annoname <<
+              " bounding box exceeds image boundary";
+          LOG_IF(WARNING, ymin > ymax) << annoname <<
+              " bounding box exceeds image boundary";
+          box[0] = float(xmin + (xmax - xmin) / 2.) / ori_w;
+          box[1] = float(ymin + (ymax - ymin) / 2.) / ori_h;
+          box[2] = float(xmax - xmin) / ori_w;
+          box[3] = float(ymax - ymin) / ori_h;
+        } else if (v2.first == "difficult") {
+          difficult = atoi(pt2.data().c_str());
+        }
+      }
+      pos_to_letterbox(ori_w, ori_h, new_w, new_h, box);
+      CHECK_GE(label, 0) << "label must start at 0";
+      datum->add_float_data(float(label));
+      datum->add_float_data(float(difficult));
+      for (int i = 0; i < 4; ++i) {
+        datum->add_float_data(box[i]);
+      }
+    }
+  }
+}
 
 bool ReadFileToDatum(const string& filename, const int label,
     Datum* datum) {
