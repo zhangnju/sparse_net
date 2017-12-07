@@ -10,10 +10,10 @@ stageiter: 16000
 stageiter: 24000
 stageiter: 32000
 stageiter: 60000
-max_iter: 80000
+max_iter: 10000
 iter_size: 8
 momentum: 0.9
 weight_decay: 0.0005
 snapshot: 10000
-snapshot_prefix: "models/yolo2"
+snapshot_prefix: "models/yolo2/yolotiny-v2"
 solver_mode: GPU
