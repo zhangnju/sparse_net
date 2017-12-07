@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys 
 
 trainval_jpeg_list = []
 trainval_xml_list = []
@@ -7,9 +8,10 @@ test07_jpeg_list = []
 test07_xml_list = []
 test12_jpeg_list = []
 
+voc_data_path=sys.argv[1]
 for name in ["VOC2007", "VOC2012"]:
 #for name in ["VOC2007"]:
-  voc_dir = os.path.join("VOCdevkit", name)
+  voc_dir = os.path.join(voc_data_path, name)
   txt_fold = os.path.join(voc_dir, "ImageSets/Main")
   jpeg_fold = os.path.join(voc_dir, "JPEGImages")
   xml_fold = os.path.join(voc_dir, "Annotations")
@@ -44,11 +46,11 @@ for name in ["VOC2007", "VOC2012"]:
   #      if not os.path.exists(test12_jpeg_list[-1]):
   #        print test12_jpeg_list[-1], "not exist"
 
-with open("trainval.txt", "w") as wr:
+with open(voc_data_path+"/trainval.txt", "w") as wr:
   for i in range(len(trainval_jpeg_list)):
     wr.write("{} {}\n".format(trainval_jpeg_list[i], trainval_xml_list[i]))
 
-with open("test_2007.txt", "w") as wr:
+with open(voc_data_path+"/test_2007.txt", "w") as wr:
   for i in range(len(test07_jpeg_list)):
     wr.write("{} {}\n".format(test07_jpeg_list[i], test07_xml_list[i]))
 

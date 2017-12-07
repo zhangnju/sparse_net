@@ -129,8 +129,8 @@ int main(int argc, char** argv) {
       enc = fn.substr(p);
       std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
     }
-    status = ReadBoxDataToDatum(root_folder + lines[line_id].first,
-        root_folder + lines[line_id].second, label_map,
+    status = ReadBoxDataToDatum(lines[line_id].first,
+        lines[line_id].second, label_map,
         resize_height, resize_width, enc, &datum);
     if (!status) continue;
     if (check_size) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
-CAFFE_HOME=../..
+CAFFE_HOME=`pwd`
 
-SOLVER=./solver.prototxt
-WEIGHTS=./tiny-yolo-conv1-7.caffemodel
+SOLVER=examples/yolo2/solver.prototxt
+WEIGHTS=$1
 $CAFFE_HOME/build/tools/caffe train --solver=$SOLVER --weights=$WEIGHTS

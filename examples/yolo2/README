@@ -1,0 +1,15 @@
+yolo2 training:
+work in caffe root dir:
+(1) data preparing:
+python examples/yolo2/data/get_list.py /mnt/data/VOCdevkit
+./examples/yolo2/data/convert.sh /mnt/data/VOCdevkit
+(2) convert pre-trained model:
+a.yolo tiny
+wget http://pjreddie.com/media/files/darknet.conv.weights
+python examples/yolo2/data/convert_weights_to_caffemodel.py -d examples/yolo2/data/tiny-yolo-conv1-7.prototxt -w darknet.conv.weights -m tiny-yolo-conv1-7.caffemodel 
+(3) train 
+./examples/yolo2/train.sh tiny-yolo-conv1-7.caffemodel
+
+
+
+
