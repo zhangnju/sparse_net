@@ -15,5 +15,5 @@ iter_size: 8
 momentum: 0.9
 weight_decay: 0.0005
 snapshot: 10000
-snapshot_prefix: "models/yolo2/yolotiny-v2"
+snapshot_prefix: "models/yolo2/pruning"
 solver_mode: GPU
