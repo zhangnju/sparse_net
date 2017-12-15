@@ -129,11 +129,20 @@ void SGDSolver<Dtype>::ApplyUpdate() {
   this->net_->Update();
 }
 
+static int compare(const void *a, const void *b)
+{
+     if ((*(float*)b - *(float*)a) > 0)
+	return 1;
+     else
+	return 0;
+}
+
 template <typename Dtype>
 void SGDSolver<Dtype>::SparseThreshold(int param_id){
   const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
   const Dtype* weight = net_params[param_id]->cpu_data();
   int weight_size=net_params[param_id]->count();
+  #if 0
   //int count=0;
   Dtype mean=Dtype(0.);
   Dtype stdval=Dtype(0.);
@@ -152,6 +161,13 @@ void SGDSolver<Dtype>::SparseThreshold(int param_id){
 	  stdval/=weight_size;stdval=sqrt(stdval);
   }
   thres_[param_id]=0.9*std::min(mean+stdval,Dtype(ZEROUT_THRESHOLD));
+  #endif
+  Dtype * sorted_weight= (Dtype*)new Dtype[weight_size];
+  memcpy(sorted_weight,weight,weight_size*sizeof(Dtype));
+  qsort((void *)sorted_weight,weight_size,sizeof(Dtype),compare);
+  Dtype zero_rate=0.8;//hard coding for time being
+  thres_[param_id]=sorted_weight[(int)(zero_rate*weight_size)];
+  delete []sorted_weight;
 }
 
 
