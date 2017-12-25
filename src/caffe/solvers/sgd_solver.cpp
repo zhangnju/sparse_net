@@ -121,11 +121,11 @@ void SGDSolver<Dtype>::ApplyUpdate() {
   for (int param_id = 0; param_id < this->net_->learnable_params().size();
        ++param_id) {
     Normalize(param_id);
-    SparseThreshold(param_id);
+    //SparseThreshold(param_id);
     Regularize(param_id);
     ComputeUpdateValue(param_id, rate);
   }
-  this->net_->SetSparsityThres(thres_);
+  //this->net_->SetSparsityThres(thres_);
   this->net_->Update();
 }
 

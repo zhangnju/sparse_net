@@ -63,7 +63,8 @@ class ConvolutionLayer : public BaseConvolutionLayer<Dtype> {
    */
   explicit ConvolutionLayer(const LayerParameter& param)
       : BaseConvolutionLayer<Dtype>(param) {}
-
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
   virtual inline const char* type() const { return "Convolution"; }
 
  protected:
@@ -77,6 +78,9 @@ class ConvolutionLayer : public BaseConvolutionLayer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   virtual inline bool reverse_dimensions() { return false; }
   virtual void compute_output_shape();
+private:
+  Blob<Dtype> weight_tmp_;
+  Blob<Dtype> bias_tmp_;
 };
 
 }  // namespace caffe

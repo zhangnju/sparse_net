@@ -911,13 +911,14 @@ void Net<Dtype>::Update() {
     //Dtype thre = Dtype(ZEROUT_THRESHOLD);
     bool pruning=pruning_flag.at(i);
     learnable_params_[i]->Update();
-    //if(pruning==true)
-    if(1)
+    /*
+    if(pruning==true)
     {
       Dtype thre= thres_.at(i);
       LOG(INFO) << "blob "<<i<<" sparsity threshold is "<<thre ;
       learnable_params_[i]->Zerout(thre);
     }
+    */
   }
 }
 

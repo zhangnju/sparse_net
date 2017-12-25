@@ -667,6 +667,8 @@ message ConvolutionParameter {
   // implementation; for input blobs with num_axes != 2, this option is
   // ignored and the ND implementation will be used.)
   optional bool force_nd_im2col = 17 [default = false];
+  optional FillerParameter weight_mask_filler = 19; // The filler for the weight
+  optional FillerParameter bias_mask_filler = 20;   // The filler for the bias
 }
 
 message CropParameter {
@@ -882,6 +884,9 @@ message InnerProductParameter {
   // of the weight matrix. The weight matrix itself is not going to be transposed
   // but rather the transfer flag of operations will be toggled accordingly.
   optional bool transpose = 6 [default = false];
+
+  optional FillerParameter weight_mask_filler = 7; // The filler for the weight
+  optional FillerParameter bias_mask_filler = 8;   // The filler for the bias
 }
 
 message InputParameter {
