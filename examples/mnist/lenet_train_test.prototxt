@@ -54,6 +54,14 @@ layer {
     bias_filler {
       type: "constant"
     }
+    weight_mask_filler {
+      type: "constant"
+      value: 1
+    }
+    bias_mask_filler {
+      type: "constant"
+      value: 1
+    }
   }
 }
 layer {
@@ -88,6 +96,14 @@ layer {
     bias_filler {
       type: "constant"
     }
+    weight_mask_filler {
+      type: "constant"
+      value: 1
+    }
+    bias_mask_filler {
+      type: "constant"
+      value: 1
+    }
   }
 }
 layer {
@@ -120,6 +136,14 @@ layer {
     bias_filler {
       type: "constant"
     }
+    weight_mask_filler {
+      type: "constant"
+      value: 1
+    }
+    bias_mask_filler {
+      type: "constant"
+      value: 1
+    }
   }
 }
 layer {
@@ -146,6 +170,14 @@ layer {
     }
     bias_filler {
       type: "constant"
+    }
+    weight_mask_filler {
+      type: "constant"
+      value: 1
+    }
+    bias_mask_filler {
+      type: "constant"
+      value: 1
     }
   }
 }

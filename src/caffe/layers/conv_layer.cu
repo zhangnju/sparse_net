@@ -30,13 +30,12 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bias = NULL;
   Dtype* biasMask = NULL;
   Dtype* biasTmp = NULL; 
-  Dtype thres0,thres1;
+  Dtype thres0=0.0001,thres1=0.0005;
   if (this->bias_term_) {  
     bias = this->blobs_[1]->mutable_gpu_data();   
     biasMask = this->blobs_[3]->mutable_gpu_data();
     biasTmp = this->bias_tmp_.mutable_gpu_data();
   }
-  
   if (this->phase_ == TRAIN){
 	// Calculate the weight mask and bias mask with probability 
       CCMaskCalc<Dtype><<<CAFFE_GET_BLOCKS(this->blobs_[0]->count()),

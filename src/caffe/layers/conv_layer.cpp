@@ -20,7 +20,7 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     this->blobs_[3].reset(new Blob<Dtype>(this->blobs_[1]->shape()));
     shared_ptr<Filler<Dtype> > bias_mask_filler(GetFiller<Dtype>(
         this->layer_param_.convolution_param().bias_mask_filler()));
-    bias_mask_filler->Fill(this->blobs_[3].get());    
+    bias_mask_filler->Fill(this->blobs_[3].get()); 
   }  
   else if(this->blobs_.size()==1 && (!this->bias_term_)){
     this->blobs_.resize(2);	  
@@ -71,22 +71,22 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     biasTmp = this->bias_tmp_.mutable_cpu_data();
   }
   if (this->phase_ == TRAIN){
-		// Calculate the weight mask and bias mask with probability
-		for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
-			if (weightMask[k]==1 && fabs(weight[k])<=thres0) 
-				weightMask[k] = 0;
-			else if (weightMask[k]==0 && fabs(weight[k])>thres1)
-				weightMask[k] = 1;
-		}	
-		if (this->bias_term_) {       
-			for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
-				if (biasMask[k]==1 && fabs(bias[k])<=thres0) 
-					biasMask[k] = 0;
-				else if (biasMask[k]==0 && fabs(bias[k])>thres1)
-					biasMask[k] = 1;
-			}    
-		}
-	} 
+      // Calculate the weight mask and bias mask with probability
+      for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
+	   if (weightMask[k]==1 && fabs(weight[k])<=thres0) 
+		weightMask[k] = 0;
+	   else if (weightMask[k]==0 && fabs(weight[k])>thres1)
+		weightMask[k] = 1;
+      }	
+      if (this->bias_term_) {       
+	  for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
+		if (biasMask[k]==1 && fabs(bias[k])<=thres0) 
+			biasMask[k] = 0;
+		else if (biasMask[k]==0 && fabs(bias[k])>thres1)
+			biasMask[k] = 1;
+	   }    
+      }
+   } 
   // Calculate the current (masked) weight and bias
 	for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
 		weightTmp[k] = weight[k]*weightMask[k];
@@ -95,7 +95,7 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
 			biasTmp[k] = bias[k]*biasMask[k];
 		}
-	}
+  }
   // If we have more threads available than batches to be prcessed then
   // we are wasting resources (lower batches than 36 on XeonE5)
   // So we instruct MKL

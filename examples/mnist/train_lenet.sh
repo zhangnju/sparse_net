@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 set -e
-
-./build/tools/caffe train --solver=examples/mnist/lenet_solver.prototxt $@
+rm -f examples/mnist/log.info
+./build/tools/caffe train --solver=examples/mnist/lenet_solver.prototxt >> examples/mnist/log.info 2>&1
