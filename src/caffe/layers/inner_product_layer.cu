@@ -31,7 +31,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   const Dtype* weight = this->blobs_[0]->gpu_data();
-  Dtype* weightMask = this->blobs_[2]->mutable_gpu_data();
+  Dtype* weightMask = this->masks_[0]->mutable_gpu_data();
   Dtype* weightTmp = this->weight_tmp_.mutable_gpu_data();  
   const Dtype* bias = NULL;
   Dtype* biasMask = NULL;
@@ -39,7 +39,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype thres0,thres1;
   if (this->bias_term_) {  
     bias = this->blobs_[1]->mutable_gpu_data();   
-    biasMask = this->blobs_[3]->mutable_gpu_data();
+    biasMask = this->masks_[1]->mutable_gpu_data();
     biasTmp = this->bias_tmp_.mutable_gpu_data();
   }   
   if (this->phase_ == TRAIN){
@@ -88,11 +88,11 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   if (this->param_propagate_down_[0]) {
     const Dtype* top_diff = top[0]->gpu_diff();
     const Dtype* bottom_data = bottom[0]->gpu_data();
-    const Dtype* weightMask = this->blobs_[2]->gpu_data();
+    const Dtype* weightMask = this->masks_[0]->gpu_data();
     Dtype* weight_diff = this->blobs_[0]->mutable_gpu_diff();
     // Gradient with respect to weight
-    CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->blobs_[2]->count()),
-      CAFFE_CUDA_NUM_THREADS>>>( this->blobs_[2]->count(), weight_diff, weightMask, weight_diff);
+    CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->masks_[0]->count()),
+      CAFFE_CUDA_NUM_THREADS>>>( this->masks_[0]->count(), weight_diff, weightMask, weight_diff);
     CUDA_POST_KERNEL_CHECK; 
     if (transpose_) {
       caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
@@ -108,11 +108,11 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
     const Dtype* top_diff = top[0]->gpu_diff();
-    const Dtype* biasMask = this->blobs_[3]->gpu_data();
+    const Dtype* biasMask = this->masks_[1]->gpu_data();
     Dtype* bias_diff = this->blobs_[1]->mutable_gpu_diff();
     // Gradient with respect to bias
-    CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->blobs_[3]->count()),
-      CAFFE_CUDA_NUM_THREADS>>>( this->blobs_[3]->count(), bias_diff, biasMask, bias_diff);
+    CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->masks_[1]->count()),
+      CAFFE_CUDA_NUM_THREADS>>>( this->masks_[1]->count(), bias_diff, biasMask, bias_diff);
     CUDA_POST_KERNEL_CHECK;
     caffe_gpu_gemv<Dtype>(CblasTrans, M_, N_, (Dtype)1., top_diff,
         bias_multiplier_.gpu_data(), (Dtype)1.,bias_diff);

@@ -54,24 +54,24 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   this->param_propagate_down_.resize(this->blobs_.size(), true);
   /************ For network pruning ***************/
   if(this->blobs_.size()==2 && (this->bias_term_)){
-    this->blobs_.resize(4);
+    this->masks_.resize(2);
     // Intialize and fill the weightmask & biasmask
-    this->blobs_[2].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
+    this->masks_[0].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
     shared_ptr<Filler<Dtype> > weight_mask_filler(GetFiller<Dtype>(
         this->layer_param_.inner_product_param().weight_mask_filler()));
-    weight_mask_filler->Fill(this->blobs_[2].get());
-    this->blobs_[3].reset(new Blob<Dtype>(this->blobs_[1]->shape()));
+    weight_mask_filler->Fill(this->masks_[0].get());
+    this->masks_[1].reset(new Blob<Dtype>(this->blobs_[1]->shape()));
     shared_ptr<Filler<Dtype> > bias_mask_filler(GetFiller<Dtype>(
         this->layer_param_.inner_product_param().bias_mask_filler()));
-    bias_mask_filler->Fill(this->blobs_[3].get());    
+    bias_mask_filler->Fill(this->masks_[1].get());    
   }  
   else if(this->blobs_.size()==1 && (!this->bias_term_)){
-    this->blobs_.resize(2);	  
+    this->masks_.resize(1);	  
     // Intialize and fill the weightmask
-    this->blobs_[1].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
+    this->masks_[0].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
     shared_ptr<Filler<Dtype> > bias_mask_filler(GetFiller<Dtype>(
         this->layer_param_.inner_product_param().bias_mask_filler()));
-    bias_mask_filler->Fill(this->blobs_[1].get());      
+    bias_mask_filler->Fill(this->masks_[0].get());      
   }   
    
   // Intialize the tmp tensor 
@@ -113,7 +113,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* weight = this->blobs_[0]->cpu_data();
   
   /************ For network pruning ***************/
-  Dtype* weightMask = this->blobs_[2]->mutable_cpu_data(); 
+  Dtype* weightMask = this->masks_[0]->mutable_cpu_data(); 
   Dtype* weightTmp = this->weight_tmp_.mutable_cpu_data();
   const Dtype* bias = NULL;
   Dtype* biasMask = NULL;  
@@ -122,7 +122,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Dtype Thres0,Thres1;
   if (this->bias_term_) {
     bias = this->blobs_[1]->mutable_cpu_data(); 
-    biasMask = this->blobs_[3]->mutable_cpu_data();
+    biasMask = this->masks_[1]->mutable_cpu_data();
     biasTmp = this->bias_tmp_.mutable_cpu_data();
   }
    
@@ -170,7 +170,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (this->param_propagate_down_[0]) {
     const Dtype* top_diff = top[0]->cpu_diff();
     const Dtype* bottom_data = bottom[0]->cpu_data();
-	const Dtype* weightMask = this->blobs_[2]->cpu_data();
+	const Dtype* weightMask = this->masks_[0]->cpu_data();
 	Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
 	// Gradient with respect to weight
 	for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
@@ -190,7 +190,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
     const Dtype* top_diff = top[0]->cpu_diff();
-	const Dtype* biasMask = this->blobs_[3]->cpu_data();
+	const Dtype* biasMask = this->masks_[1]->cpu_data();
     Dtype* bias_diff = this->blobs_[1]->mutable_cpu_diff();
     // Gradient with respect to bias
     for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {

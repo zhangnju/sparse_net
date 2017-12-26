@@ -25,7 +25,7 @@ template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const Dtype* weight = this->blobs_[0]->gpu_data();
-  Dtype* weightMask = this->blobs_[2]->mutable_gpu_data();
+  Dtype* weightMask = this->masks_[0]->mutable_gpu_data();
   Dtype* weightTmp = this->weight_tmp_.mutable_gpu_data(); 
   const Dtype* bias = NULL;
   Dtype* biasMask = NULL;
@@ -33,7 +33,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype thres0=0.0001,thres1=0.0005;
   if (this->bias_term_) {  
     bias = this->blobs_[1]->mutable_gpu_data();   
-    biasMask = this->blobs_[3]->mutable_gpu_data();
+    biasMask = this->masks_[1]->mutable_gpu_data();
     biasTmp = this->bias_tmp_.mutable_gpu_data();
   }
   if (this->phase_ == TRAIN){
@@ -78,16 +78,16 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   const Dtype* weight = this->blobs_[0]->gpu_data();
   const Dtype* weightTmp = this->weight_tmp_.gpu_data();  	
-  const Dtype* weightMask = this->blobs_[2]->gpu_data();
+  const Dtype* weightMask = this->masks_[0]->gpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_gpu_diff();
   for (int i = 0; i < top.size(); ++i) {
     const Dtype* top_diff = top[i]->gpu_diff();
     // Bias gradient, if necessary.
     if (this->bias_term_ && this->param_propagate_down_[1]) {
-      const Dtype* biasMask = this->blobs_[3]->gpu_data();
+      const Dtype* biasMask = this->masks_[1]->gpu_data();
       Dtype* bias_diff = this->blobs_[1]->mutable_gpu_diff();
-      CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->blobs_[3]->count()),
-        CAFFE_CUDA_NUM_THREADS>>>( this->blobs_[3]->count(), bias_diff, biasMask, bias_diff);
+      CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->masks_[1]->count()),
+        CAFFE_CUDA_NUM_THREADS>>>( this->masks_[1]->count(), bias_diff, biasMask, bias_diff);
       CUDA_POST_KERNEL_CHECK;  
       for (int n = 0; n < this->num_; ++n) {
         this->backward_gpu_bias(bias_diff, top_diff + n * this->top_dim_);
@@ -96,8 +96,8 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     if (this->param_propagate_down_[0] || propagate_down[i]) {
       const Dtype* bottom_data = bottom[i]->gpu_data();
       Dtype* bottom_diff = bottom[i]->mutable_gpu_diff();
-      CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->blobs_[2]->count()),
-        CAFFE_CUDA_NUM_THREADS>>>( this->blobs_[2]->count(), weight_diff, weightMask, weight_diff);
+      CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->masks_[0]->count()),
+        CAFFE_CUDA_NUM_THREADS>>>( this->masks_[0]->count(), weight_diff, weightMask, weight_diff);
       CUDA_POST_KERNEL_CHECK; 
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.

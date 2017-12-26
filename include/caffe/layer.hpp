@@ -470,25 +470,25 @@ void Layer<Dtype>::ToProto(LayerParameter* param, bool write_diff) {
   param->clear_blobs();
   if(this->layer_param_.type()=="Convolution" || this->layer_param_.type()=="InnerProduct")
   {
-   if(this->blobs_.size()==4 ){
+   if(this->masks_.size()==2 ){
      Dtype* weight = this->blobs_[0]->mutable_cpu_data();
-     const Dtype* weightMask = this->blobs_[2]->cpu_data();
+     const Dtype* weightMask = this->masks_[0]->cpu_data();
      Dtype* bias = this->blobs_[1]->mutable_cpu_data(); 
-     const Dtype* biasMask = this->blobs_[3]->cpu_data();
+     const Dtype* biasMask = this->masks_[1]->cpu_data();
      for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
            weight[k] = weight[k]*weightMask[k];
      }
      for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
 	   bias[k] = bias[k]*biasMask[k];
      }
-     this->blobs_.resize(2);
-   }else if(this->blobs_.size()==2){
+  
+   }else if(this->masks_.size()==1){
      Dtype* weight = this->blobs_[0]->mutable_cpu_data();
-     const Dtype* weightMask = this->blobs_[1]->cpu_data();
+     const Dtype* weightMask = this->masks_[0]->cpu_data();
      for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
            weight[k] = weight[k]*weightMask[k];
      }
-     this->blobs_.resize(1);
+    
    }
   }
   for (int i = 0; i < blobs_.size(); ++i) {
