@@ -25,10 +25,10 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   else if(this->blobs_.size()==1 && (!this->bias_term_)){
     this->masks_.resize(1);	  
     // Intialize and fill the weightmask
-    this->blobs_[0].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
+    this->masks_[0].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
     shared_ptr<Filler<Dtype> > bias_mask_filler(GetFiller<Dtype>(
         this->layer_param_.convolution_param().bias_mask_filler()));
-    bias_mask_filler->Fill(this->masks_[1].get());      
+    bias_mask_filler->Fill(this->masks_[0].get());      
   }  
 	
   // Intializing the tmp tensor

@@ -470,29 +470,41 @@ void Layer<Dtype>::ToProto(LayerParameter* param, bool write_diff) {
   param->clear_blobs();
   if(this->layer_param_.type()=="Convolution" || this->layer_param_.type()=="InnerProduct")
   {
+   vector<shared_ptr<Blob<Dtype> > > tmps_;
    if(this->masks_.size()==2 ){
-     Dtype* weight = this->blobs_[0]->mutable_cpu_data();
+     tmps_.resize(2);
+     tmps_[0].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
+     tmps_[1].reset(new Blob<Dtype>(this->blobs_[1]->shape()));
+     const Dtype* weight = this->blobs_[0]->cpu_data();
      const Dtype* weightMask = this->masks_[0]->cpu_data();
-     Dtype* bias = this->blobs_[1]->mutable_cpu_data(); 
+     const Dtype* bias = this->blobs_[1]->cpu_data(); 
      const Dtype* biasMask = this->masks_[1]->cpu_data();
+     Dtype* weight_tmp=tmps_[0]->mutable_cpu_data();
+     Dtype* bias_tmp=tmps_[1]->mutable_cpu_data();
      for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
-           weight[k] = weight[k]*weightMask[k];
+           weight_tmp[k] = weight[k]*weightMask[k];
      }
      for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
-	   bias[k] = bias[k]*biasMask[k];
+	   bias_tmp[k] = bias[k]*biasMask[k];
      }
-  
    }else if(this->masks_.size()==1){
-     Dtype* weight = this->blobs_[0]->mutable_cpu_data();
+     tmps_.resize(1);
+     tmps_[0].reset(new Blob<Dtype>(this->blobs_[0]->shape()));
+     const Dtype* weight = this->blobs_[0]->cpu_data();
      const Dtype* weightMask = this->masks_[0]->cpu_data();
+     Dtype* weight_tmp=tmps_[0]->mutable_cpu_data();
      for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
-           weight[k] = weight[k]*weightMask[k];
+           weight_tmp[k] = weight[k]*weightMask[k];
      }
-    
    }
+    for (int i = 0; i < tmps_.size(); ++i) {
+      tmps_[i]->ToProto(param->add_blobs(), write_diff);
+    }
   }
-  for (int i = 0; i < blobs_.size(); ++i) {
-    blobs_[i]->ToProto(param->add_blobs(), write_diff);
+  else{
+    for (int i = 0; i < blobs_.size(); ++i) {
+      blobs_[i]->ToProto(param->add_blobs(), write_diff);
+    }
   }
 }
 
