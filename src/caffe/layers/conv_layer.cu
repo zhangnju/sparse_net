@@ -30,7 +30,8 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bias = NULL;
   Dtype* biasMask = NULL;
   Dtype* biasTmp = NULL; 
-  Dtype thres0=0.0001,thres1=0.0005;
+  Dtype thres0=this->layer_param_.pruning_thres();
+  Dtype thres1=thres0;
   if (this->bias_term_) {  
     bias = this->blobs_[1]->mutable_gpu_data();   
     biasMask = this->masks_[1]->mutable_gpu_data();
@@ -76,7 +77,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* weight = this->blobs_[0]->gpu_data();
+  //const Dtype* weight = this->blobs_[0]->gpu_data();
   const Dtype* weightTmp = this->weight_tmp_.gpu_data();  	
   const Dtype* weightMask = this->masks_[0]->gpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_gpu_diff();

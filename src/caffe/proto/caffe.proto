@@ -359,6 +359,8 @@ message LayerParameter {
   // Parameters shared by loss layers.
   optional LossParameter loss_param = 101;
 
+  // pruning threshold 
+  optional float pruning_thres = 99[default = 0];
   // Layer type-specific parameters.
   //
   // Note: certain layers may have more than one computational engine

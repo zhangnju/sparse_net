@@ -64,7 +64,8 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bias = NULL;
   Dtype* biasMask = NULL;  
   Dtype* biasTmp = NULL;
-  Dtype thres0,thres1;
+  Dtype thres0=this->layer_param_.pruning_thres();
+  Dtype thres1=thres0;
   if (this->bias_term_) {
     bias = this->blobs_[1]->mutable_cpu_data(); 
     biasMask = this->masks_[1]->mutable_cpu_data();
@@ -116,7 +117,7 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* weight = this->blobs_[0]->cpu_data();
+  //const Dtype* weight = this->blobs_[0]->cpu_data();
   const Dtype* weightTmp = this->weight_tmp_.cpu_data();  
   const Dtype* weightMask = this->masks_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();

@@ -44,6 +44,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.291
   convolution_param {
     num_output: 20
     kernel_size: 5
@@ -86,6 +87,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.053
   convolution_param {
     num_output: 50
     kernel_size: 5
@@ -128,6 +130,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.035
   inner_product_param {
     num_output: 500
     weight_filler {
@@ -163,6 +166,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.091
   inner_product_param {
     num_output: 10
     weight_filler {

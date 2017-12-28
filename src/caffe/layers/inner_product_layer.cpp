@@ -119,7 +119,9 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* biasMask = NULL;  
   Dtype* biasTmp = NULL;
 
-  Dtype Thres0,Thres1;
+  Dtype thres0=this->layer_param_.pruning_thres();
+  Dtype thres1=thres0;
+
   if (this->bias_term_) {
     bias = this->blobs_[1]->mutable_cpu_data(); 
     biasMask = this->masks_[1]->mutable_cpu_data();
@@ -127,25 +129,25 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
    
   if (this->phase_ == TRAIN){	
-		for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
-			if (weightMask[k]==1 && fabs(weight[k])<=Thres0)
-				weightMask[k] = 0;
-			else if (weightMask[k]==0 && fabs(weight[k])>Thres1)
-				weightMask[k] = 1;
-		}	
-		if (this->bias_term_) {       
-			for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
-				if (biasMask[k]==1 && fabs(bias[k])<=Thres0)
-					biasMask[k] = 0;
-				else if (biasMask[k]==0 && fabs(bias[k])>Thres1)
-					biasMask[k] = 1;
-			}    
-		} 
-	}    
+	for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
+		if (weightMask[k]==1 && fabs(weight[k])<=thres0)
+			weightMask[k] = 0;
+		else if (weightMask[k]==0 && fabs(weight[k])>thres1)
+			weightMask[k] = 1;
+	}	
+	if (this->bias_term_) {       
+		for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
+			if (biasMask[k]==1 && fabs(bias[k])<=thres0)
+				biasMask[k] = 0;
+			else if (biasMask[k]==0 && fabs(bias[k])>thres1)
+				biasMask[k] = 1;
+		}    
+	} 
+  }    
 	
   // Calculate the current (masked) weight and bias
-	for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
-		weightTmp[k] = weight[k]*weightMask[k];
+  for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
+	weightTmp[k] = weight[k]*weightMask[k];
 	}
 	if (this->bias_term_){
 		for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {

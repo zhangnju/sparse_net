@@ -36,7 +36,8 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bias = NULL;
   Dtype* biasMask = NULL;
   Dtype* biasTmp = NULL;
-  Dtype thres0,thres1;
+  Dtype thres0=this->layer_param_.pruning_thres();
+  Dtype thres1=thres0;
   if (this->bias_term_) {  
     bias = this->blobs_[1]->mutable_gpu_data();   
     biasMask = this->masks_[1]->mutable_gpu_data();

@@ -150,14 +150,18 @@ def drawHist(orig_net,layer_name):
 
 def get_threashold(orig_net,layer_name,zero_rate):
     weights= orig_net.params[layer_name][0].data
-    filter_num = weights.shape[0]
-    chan_num = weights.shape[1]
-    kernel_h = weights.shape[2]
-    kernel_w = weights.shape[3]
-    kernel_size = kernel_h*kernel_w
-    weight_array=weights.reshape((chan_num*filter_num, kernel_size)).flatten()
+    if 4==len(weights.shape):
+      filter_num = weights.shape[0]
+      chan_num = weights.shape[1]
+      kernel_h = weights.shape[2]
+      kernel_w = weights.shape[3]
+      kernel_size = kernel_h*kernel_w
+      weight_array=weights.reshape((chan_num*filter_num, kernel_size)).flatten()
+    else:
+      weight_array=weights.reshape((1, weights.shape[0]*weights.shape[1])).flatten()
     sorted_weight=np.argsort(abs(weight_array))
     ind=sorted_weight[int(zero_rate*len(weight_array))]
+    
     return abs(weight_array[ind])
 
 if __name__ == "__main__":
