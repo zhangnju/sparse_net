@@ -53,7 +53,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }  // parameter initialization
   this->param_propagate_down_.resize(this->blobs_.size(), true);
   /************ For network pruning ***************/
-  if(pruning_)
+  if(this->pruning_)
   {
   if(this->blobs_.size()==2 && (this->bias_term_)){
     this->masks_.resize(2);
@@ -119,7 +119,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     bias = this->blobs_[1]->mutable_cpu_data();
   }
   /************ For network pruning ***************/
-  if(pruning_)
+  if(this->pruning_)
   {
   Dtype* weightMask = this->masks_[0]->mutable_cpu_data(); 
   Dtype* weightTmp = this->weight_tmp_.mutable_cpu_data();
@@ -191,7 +191,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const Dtype* top_diff = top[0]->cpu_diff();
     const Dtype* bottom_data = bottom[0]->cpu_data();
 	Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
-	if(pruning_)
+	if(this->pruning_)
 	{
 	const Dtype* weightMask = this->masks_[0]->cpu_data();
 	// Gradient with respect to weight
@@ -214,7 +214,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (bias_term_ && this->param_propagate_down_[1]) {
     const Dtype* top_diff = top[0]->cpu_diff();
 	Dtype* bias_diff = this->blobs_[1]->mutable_cpu_diff();
-	if(pruning_)
+	if(this->pruning_)
 	{
 	const Dtype* biasMask = this->masks_[1]->cpu_data();
     // Gradient with respect to bias
@@ -227,7 +227,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   }
   if (propagate_down[0]) {
     const Dtype* top_diff = top[0]->cpu_diff();
-	if(pruning_)
+	if(this->pruning_)
 		{
 	const Dtype* weightTmp = this->weight_tmp_.cpu_data();
     // Gradient with respect to bottom data
