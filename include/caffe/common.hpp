@@ -148,6 +148,8 @@ class Caffe {
   // freed in a non-pinned way, which may cause problems - I haven't verified
   // it personally but better to note it here in the header file.
   inline static void set_mode(Brew mode) { Get().mode_ = mode; }
+  inline static bool get_pruning() { return Get().pruning_; }
+  inline static void set_pruning(bool pruning) { Get().pruning_ = pruning; }
   // Sets the random seed of both boost and curand
   static void set_random_seed(const unsigned int seed);
   // Sets the device. Since we have cublas and curand stuff, set device also
@@ -178,6 +180,7 @@ class Caffe {
 
   Brew mode_;
 
+  bool pruning_;
   // Parallel training
   int solver_count_;
   int solver_rank_;

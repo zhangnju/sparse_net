@@ -38,6 +38,8 @@ DEFINE_string(phase, "",
     "Optional; network phase (TRAIN or TEST). Only used for 'time'.");
 DEFINE_int32(level, 0,
     "Optional; network level.");
+DEFINE_int32(pruning, 0,
+    "Optional; network pruning.");
 DEFINE_string(stage, "",
     "Optional; network stages (not to be confused with phase), "
     "separated by ','.");
@@ -188,6 +190,14 @@ int train() {
   caffe::ReadSolverParamsFromTextFileOrDie(FLAGS_solver, &solver_param);
 
   solver_param.mutable_train_state()->set_level(FLAGS_level);
+  if(FLAGS_pruning==0)
+  	{
+  	  Caffe::set_pruning(false);
+  	}
+  else
+  	{
+  	  Caffe::set_pruning(true);
+  	}
   for (int i = 0; i < stages.size(); i++) {
     solver_param.mutable_train_state()->add_stage(stages[i]);
   }
@@ -228,7 +238,7 @@ int train() {
     Caffe::set_mode(Caffe::GPU);
     Caffe::set_solver_count(gpus.size());
   }
-
+  if()
   caffe::SignalHandler signal_handler(
         GetRequestedAction(FLAGS_sigint_effect),
         GetRequestedAction(FLAGS_sighup_effect));

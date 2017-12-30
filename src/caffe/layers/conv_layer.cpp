@@ -10,6 +10,8 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   BaseConvolutionLayer <Dtype>::LayerSetUp(bottom, top); 
   
   /************ For network pruning ***************/
+  if(pruning_)
+  	{
   if(this->blobs_.size()==2 && (this->bias_term_)){
     this->masks_.resize(2);
     // Intialize and fill the weightmask & biasmask
@@ -34,7 +36,7 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   // Intializing the tmp tensor
   this->weight_tmp_.Reshape(this->blobs_[0]->shape());
   this->bias_tmp_.Reshape(this->blobs_[1]->shape());  
-	
+  	}
   /********************************************************/
 }
 
@@ -59,19 +61,23 @@ template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const Dtype* weight = this->blobs_[0]->cpu_data();
-  Dtype* weightMask = this->masks_[0]->mutable_cpu_data(); 
-  Dtype* weightTmp = this->weight_tmp_.mutable_cpu_data(); 
   const Dtype* bias = NULL;
-  Dtype* biasMask = NULL;  
-  Dtype* biasTmp = NULL;
-  Dtype thres0=this->layer_param_.pruning_thres();
-  Dtype thres1=thres0;
-  if (this->bias_term_) {
-    bias = this->blobs_[1]->mutable_cpu_data(); 
-    biasMask = this->masks_[1]->mutable_cpu_data();
-    biasTmp = this->bias_tmp_.mutable_cpu_data();
-  }
-  if (this->phase_ == TRAIN){
+  if (this->bias_term_) 
+    bias = this->blobs_[1]->mutable_cpu_data();
+  if(pruning_)
+  	{
+     Dtype* weightMask = this->masks_[0]->mutable_cpu_data(); 
+     Dtype* weightTmp = this->weight_tmp_.mutable_cpu_data();  
+     Dtype* biasMask = NULL;  
+     Dtype* biasTmp = NULL;
+     Dtype thres0=this->layer_param_.pruning_thres();
+     Dtype thres1=thres0;
+  	
+     if (this->bias_term_) {
+      biasMask = this->masks_[1]->mutable_cpu_data();
+      biasTmp = this->bias_tmp_.mutable_cpu_data();	
+     }
+     if (this->phase_ == TRAIN){
       // Calculate the weight mask and bias mask with probability
       for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
 	   if (weightMask[k]==1 && fabs(weight[k])<=thres0) 
@@ -97,10 +103,7 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			biasTmp[k] = bias[k]*biasMask[k];
 		}
   }
-  // If we have more threads available than batches to be prcessed then
-  // we are wasting resources (lower batches than 36 on XeonE5)
-  // So we instruct MKL
-  for (int i = 0; i < bottom.size(); ++i) {
+	for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = top[i]->mutable_cpu_data();
     for (int n = 0; n < this->num_; ++n) {
@@ -112,34 +115,61 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         }
       }
   }
+  	}
+  else
+  	{
+  for (int i = 0; i < bottom.size(); ++i) {
+    const Dtype* bottom_data = bottom[i]->cpu_data();
+    Dtype* top_data = top[i]->mutable_cpu_data();
+    for (int n = 0; n < this->num_; ++n) {
+        this->forward_cpu_gemm(bottom_data + n*this->bottom_dim_,
+                               weight,
+                               top_data + n*this->top_dim_);
+        if (this->bias_term_) {
+          this->forward_cpu_bias(top_data + n * this->top_dim_, bias);
+        }
+      }
+  }
+  	}
 }
 
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  //const Dtype* weight = this->blobs_[0]->cpu_data();
-  const Dtype* weightTmp = this->weight_tmp_.cpu_data();  
-  const Dtype* weightMask = this->masks_[0]->cpu_data();
+  const Dtype* weight = this->blobs_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
+  const Dtype* weightTmp = NULL;  
+  const Dtype* weightMask = NULL;
+  
+  if(pruning_)
+  	{
+  	  weightTmp = this->weight_tmp_.cpu_data();  
+      weightMask = this->masks_[0]->cpu_data();
+  	}
   for (int i = 0; i < top.size(); ++i) {
     const Dtype* top_diff = top[i]->cpu_diff();
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* bottom_diff = bottom[i]->mutable_cpu_diff();
     // Bias gradient, if necessary.
     if (this->bias_term_ && this->param_propagate_down_[1]) {
-	  const Dtype* biasMask = this->masks_[1]->cpu_data();
       Dtype* bias_diff = this->blobs_[1]->mutable_cpu_diff();
-	  for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
-		bias_diff[k] = bias_diff[k]*biasMask[k];
+	  if(pruning_)
+	  {
+	    const Dtype* biasMask = this->masks_[1]->cpu_data();
+	    for (unsigned int k = 0;k < this->blobs_[1]->count(); ++k) {
+		  bias_diff[k] = bias_diff[k]*biasMask[k];
+	    }
 	  }
       for (int n = 0; n < this->num_; ++n) {
         this->backward_cpu_bias(bias_diff, top_diff + n * this->top_dim_);
       }
     }
     if (this->param_propagate_down_[0] || propagate_down[i]) {
+		if(pruning_){
       for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
 		weight_diff[k] = weight_diff[k]*weightMask[k];
 	  }
+			}
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
@@ -148,8 +178,15 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         }
         // gradient w.r.t. bottom data, if necessary.
         if (propagate_down[i]) {
+			if(pruning_){
           this->backward_cpu_gemm(top_diff + n * this->top_dim_, weightTmp,
               bottom_diff + n * this->bottom_dim_);
+				}
+			else
+				{
+				this->backward_cpu_gemm(top_diff + n * this->top_dim_, weight,
+              bottom_diff + n * this->bottom_dim_);
+				}
         }
       }
     }

@@ -39,6 +39,7 @@ class Layer {
    */
   explicit Layer(const LayerParameter& param)
     : layer_param_(param) {
+      pruning_=Caffe::get_pruning();
       // Set phase and copy blobs (if there are any).
       phase_ = param.phase();
       if (layer_param_.blobs_size() > 0) {
@@ -297,6 +298,7 @@ class Layer {
   LayerParameter layer_param_;
   /** The phase: TRAIN or TEST */
   Phase phase_;
+  bool pruning_;
   /** The vector that stores the learnable parameters as a set of blobs. */
   vector<shared_ptr<Blob<Dtype> > > blobs_;
   vector<shared_ptr<Blob<Dtype> > > masks_;
@@ -468,7 +470,7 @@ void Layer<Dtype>::ToProto(LayerParameter* param, bool write_diff) {
   param->Clear();
   param->CopyFrom(layer_param_);
   param->clear_blobs();
-  if(this->layer_param_.type()=="Convolution" || this->layer_param_.type()=="InnerProduct")
+  if(pruning_&&(this->layer_param_.type()=="Convolution" || this->layer_param_.type()=="InnerProduct"))
   {
    vector<shared_ptr<Blob<Dtype> > > tmps_;
    if(this->masks_.size()==2 ){
