@@ -238,7 +238,6 @@ int train() {
     Caffe::set_mode(Caffe::GPU);
     Caffe::set_solver_count(gpus.size());
   }
-  if()
   caffe::SignalHandler signal_handler(
         GetRequestedAction(FLAGS_sigint_effect),
         GetRequestedAction(FLAGS_sighup_effect));
