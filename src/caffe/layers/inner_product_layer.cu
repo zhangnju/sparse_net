@@ -35,7 +35,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   if (this->bias_term_) {  
     bias = this->blobs_[1]->mutable_gpu_data();
   }
-  if(pruning_){
+  if(this->pruning_){
   Dtype* weightMask = this->masks_[0]->mutable_gpu_data();
   Dtype* weightTmp = this->weight_tmp_.mutable_gpu_data();  
   Dtype* biasMask = NULL;
@@ -113,7 +113,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const Dtype* top_diff = top[0]->gpu_diff();
     const Dtype* bottom_data = bottom[0]->gpu_data();
     Dtype* weight_diff = this->blobs_[0]->mutable_gpu_diff();
-    if(pruning_)
+    if(this->pruning_)
     {
     const Dtype* weightMask = this->masks_[0]->gpu_data();
     // Gradient with respect to weight
@@ -136,7 +136,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   if (bias_term_ && this->param_propagate_down_[1]) {
     const Dtype* top_diff = top[0]->gpu_diff();
     Dtype* bias_diff = this->blobs_[1]->mutable_gpu_diff();
-    if(pruning_)
+    if(this->pruning_)
     {
     const Dtype* biasMask = this->masks_[1]->gpu_data(); 
     // Gradient with respect to bias
@@ -149,7 +149,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   }
   if (propagate_down[0]) {
     const Dtype* top_diff = top[0]->gpu_diff();
-    if(pruning_)
+    if(this->pruning_)
     {
     const Dtype* weightTmp = this->weight_tmp_.gpu_data();
     // Gradient with respect to bottom data
