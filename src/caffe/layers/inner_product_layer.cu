@@ -46,7 +46,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     biasMask = this->masks_[1]->mutable_gpu_data();
     biasTmp = this->bias_tmp_.mutable_gpu_data();
   }   
-  if (this->phase_ == TRAIN){
+  //if (this->phase_ == TRAIN){
       CCMaskCalc<Dtype><<<CAFFE_GET_BLOCKS(this->blobs_[0]->count()),
         CAFFE_CUDA_NUM_THREADS>>>( this->blobs_[0]->count(), weight, weightMask, thres0,thres1);
       CUDA_POST_KERNEL_CHECK;    
@@ -55,7 +55,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
           CAFFE_CUDA_NUM_THREADS>>>( this->blobs_[1]->count(), bias, biasMask, thres0,thres1);
         CUDA_POST_KERNEL_CHECK;  
       }    
-  }  
+  //}  
   
   // Calculate the current (masked) weight and bias
   CCMaskApply<Dtype><<<CAFFE_GET_BLOCKS(this->blobs_[0]->count()),

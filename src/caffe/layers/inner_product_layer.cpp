@@ -135,7 +135,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     biasTmp = this->bias_tmp_.mutable_cpu_data();
   }
    
-  if (this->phase_ == TRAIN){	
+  //if (this->phase_ == TRAIN){	
 	for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
 		if (weightMask[k]==1 && fabs(weight[k])<=thres0)
 			weightMask[k] = 0;
@@ -150,7 +150,7 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 				biasMask[k] = 1;
 		}    
 	} 
-  }    
+  //}    
 	
   // Calculate the current (masked) weight and bias
   for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {

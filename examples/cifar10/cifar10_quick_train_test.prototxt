@@ -44,6 +44,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.049
   convolution_param {
     num_output: 32
     pad: 2
@@ -86,6 +87,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.022
   convolution_param {
     num_output: 32
     pad: 2
@@ -128,6 +130,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.020
   convolution_param {
     num_output: 64
     pad: 2
@@ -170,6 +173,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.109
   inner_product_param {
     num_output: 64
     weight_filler {
@@ -192,6 +196,7 @@ layer {
   param {
     lr_mult: 2
   }
+  pruning_thres: 0.114
   inner_product_param {
     num_output: 10
     weight_filler {

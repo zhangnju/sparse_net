@@ -12,6 +12,7 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   /************ For network pruning ***************/
   if(this->pruning_)
   	{
+  LOG(INFO)<<"In Pruning Net";
   if(this->blobs_.size()==2 && (this->bias_term_)){
     this->masks_.resize(2);
     // Intialize and fill the weightmask & biasmask
@@ -36,7 +37,8 @@ void ConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   // Intializing the tmp tensor
   this->weight_tmp_.Reshape(this->blobs_[0]->shape());
   this->bias_tmp_.Reshape(this->blobs_[1]->shape());  
-  	}
+  	}else
+  LOG(INFO)<<"In Network Train";
   /********************************************************/
 }
 
@@ -77,7 +79,7 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       biasMask = this->masks_[1]->mutable_cpu_data();
       biasTmp = this->bias_tmp_.mutable_cpu_data();	
      }
-     if (this->phase_ == TRAIN){
+     //if (this->phase_ == TRAIN){
       // Calculate the weight mask and bias mask with probability
       for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
 	   if (weightMask[k]==1 && fabs(weight[k])<=thres0) 
@@ -93,7 +95,7 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 			biasMask[k] = 1;
 	   }    
       }
-   } 
+   //} 
   // Calculate the current (masked) weight and bias
 	for (unsigned int k = 0;k < this->blobs_[0]->count(); ++k) {
 		weightTmp[k] = weight[k]*weightMask[k];
