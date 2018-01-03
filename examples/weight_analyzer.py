@@ -164,6 +164,28 @@ def get_threashold(orig_net,layer_name,zero_rate):
     
     return abs(weight_array[ind])
 
+def rewrite(orig_prototxt,thres=[]):
+    new_prototxt=orig_prototxt.replace('.prototxt','_sp.prototxt')
+    if os.path.exists(new_prototxt):
+       os.remove(new_prototxt)
+    oldfile=open(orig_prototxt,"r")
+    newfile=open(new_prototxt,"w")
+    index=0
+    for line in oldfile:
+       if line.find("convolution_param")!=-1:
+           newfile.write("  pruning_thres:{}\n".format(thres[index]));
+           newfile.write(line)
+           index+=1
+       elif line.find("inner_product_param")!=-1:
+           newfile.write("  pruning_thres:{}\n".format(thres[index]));
+           newfile.write(line)
+           index+=1
+       else:
+           newfile.write(line)
+       
+    oldfile.close()
+    newfile.close()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--prototxt', type=str, required=True)
@@ -181,7 +203,7 @@ if __name__ == "__main__":
 
     orig_net = caffe.Net(prototxt,original_caffemodel, caffe.TEST)
     print("blobs {}\nparams {}".format(orig_net.blobs.keys(), orig_net.params.keys()))
-    
+    thres_list=[]
     for layer_name in orig_net.params.keys():
        layer_type = net_parser.getLayerByName(net_msg,layer_name).type
        if layer_type=='Convolution' or layer_type =='InnerProduct':
@@ -190,6 +212,8 @@ if __name__ == "__main__":
             print "the max weight in this layer is {}".format(max_val)
             min_val=get_min_weight(orig_net,layer_name)
             print "the min weight in this layer is {}".format(min_val)
-            print "the pruning threashold in this layer is {}".format(get_threashold(orig_net,layer_name,0.8)) 
-
-
+            thres=get_threashold(orig_net,layer_name,0.8)
+            print "the pruning threashold in this layer is {}".format(thres) 
+            thres_list.append(thres)
+    
+    rewrite(prototxt,thres_list)
