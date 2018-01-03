@@ -91,7 +91,6 @@ class Net {
 
   /// @brief Updates the network weights based on the diff values computed.
   void Update();
-  void SetSparsityThres(vector<Dtype> t){thres_=t;}
   /**
    * @brief Shares weight data of owner blobs with shared blobs.
    *
@@ -278,8 +277,6 @@ class Net {
   string name_;
   /// @brief The phase: TRAIN or TEST
   Phase phase_;
-  vector<Dtype> thres_;
-  vector<bool> pruning_flag;
   /// @brief Individual layers in the net
   vector<shared_ptr<Layer<Dtype> > > layers_;
   vector<string> layer_names_;

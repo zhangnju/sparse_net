@@ -196,33 +196,6 @@ void Blob<Dtype>::Update() {
   }
 }
 
-template <typename Dtype>
-void Blob<Dtype>::Zerout(Dtype thre) {
-  // Zero out elements whose values are smaller than thre.
-  //Dtype thre = Dtype(ZEROUT_THRESHOLD);
-  Dtype* data_ptr_tmp = 0;
-  switch (data_->head()) {
-  case SyncedMemory::HEAD_AT_CPU:
-	  data_ptr_tmp = static_cast<Dtype*>(data_->mutable_cpu_data());
-	  for(int i=0;i<count_;i++){
-		  if(data_ptr_tmp[i]<thre && data_ptr_tmp[i]>(-thre)){
-			  data_ptr_tmp[i]=0;
-		  }
-	  }
-    break;
-  case SyncedMemory::HEAD_AT_GPU:
-  case SyncedMemory::SYNCED:
-#ifndef CPU_ONLY
-	  caffe_gpu_zerout(data_->mutable_gpu_data(),count_,thre);
-#else
-    NO_GPU;
-#endif
-    break;
-  default:
-    LOG(FATAL) << "Syncedmem not initialized.";
-  }
-}
-
 template <> unsigned int Blob<unsigned int>::asum_data() const {
   NOT_IMPLEMENTED;
   return 0;

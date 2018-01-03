@@ -152,8 +152,6 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     for (int param_id = 0; param_id < num_param_blobs; ++param_id) {
       AppendParam(param, layer_id, param_id);
     }
-    for (int param_id = 0; param_id < num_param_blobs; ++param_id)
-      pruning_flag.push_back(layer_param.pruning());
     // Finally, set the backward flag
     layer_need_backward_.push_back(need_backward);
     if (need_backward) {
@@ -908,17 +906,7 @@ void Net<Dtype>::ToHDF5(const string& filename, bool write_diff) const {
 template <typename Dtype>
 void Net<Dtype>::Update() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
-    //Dtype thre = Dtype(ZEROUT_THRESHOLD);
-    bool pruning=pruning_flag.at(i);
     learnable_params_[i]->Update();
-    /*
-    if(pruning==true)
-    {
-      Dtype thre= thres_.at(i);
-      LOG(INFO) << "blob "<<i<<" sparsity threshold is "<<thre ;
-      learnable_params_[i]->Zerout(thre);
-    }
-    */
   }
 }
 

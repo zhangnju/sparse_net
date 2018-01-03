@@ -26,7 +26,6 @@ class SGDSolver : public Solver<Dtype> {
  protected:
   void PreSolve();
   Dtype GetLearningRate();
-  void SparseThreshold(int param_id);
   virtual void ApplyUpdate();
   virtual void Normalize(int param_id);
   virtual void Regularize(int param_id);
@@ -42,7 +41,7 @@ class SGDSolver : public Solver<Dtype> {
   // temp maintains other information that might be needed in computation
   //   of gradients/updates and is not needed in snapshots
   vector<shared_ptr<Blob<Dtype> > > history_, update_, temp_;
-  vector<Dtype> thres_;
+
   DISABLE_COPY_AND_ASSIGN(SGDSolver);
 };
 

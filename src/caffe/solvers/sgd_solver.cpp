@@ -78,15 +78,12 @@ void SGDSolver<Dtype>::PreSolve() {
   history_.clear();
   update_.clear();
   temp_.clear();
-  thres_.clear();
   for (int i = 0; i < net_params.size(); ++i) {
     const vector<int>& shape = net_params[i]->shape();
     history_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
     update_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
     temp_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
-    thres_.push_back(Dtype(ZEROUT_THRESHOLD));
   }
- 
 }
 
 template <typename Dtype>
@@ -121,55 +118,11 @@ void SGDSolver<Dtype>::ApplyUpdate() {
   for (int param_id = 0; param_id < this->net_->learnable_params().size();
        ++param_id) {
     Normalize(param_id);
-    //SparseThreshold(param_id);
     Regularize(param_id);
     ComputeUpdateValue(param_id, rate);
   }
-  //this->net_->SetSparsityThres(thres_);
   this->net_->Update();
 }
-
-static int compare(const void *a, const void *b)
-{
-     if ((*(float*)b - *(float*)a) > 0)
-	return 1;
-     else
-	return 0;
-}
-
-template <typename Dtype>
-void SGDSolver<Dtype>::SparseThreshold(int param_id){
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
-  const Dtype* weight = net_params[param_id]->cpu_data();
-  int weight_size=net_params[param_id]->count();
-  #if 0
-  //int count=0;
-  Dtype mean=Dtype(0.);
-  Dtype stdval=Dtype(0.);
-  for(int id=0;id<weight_size;id++)
-  {
-  	mean+=fabs(weight[id]);
-	stdval+=weight[id]*weight[id];
-	//if(weight[id]!=0)
-	//	count++;
-  }
-  if(weight_size==0)
-  	return;
-  else
-  {
-  	  mean/=weight_size;stdval-=weight_size*mean*mean;
-	  stdval/=weight_size;stdval=sqrt(stdval);
-  }
-  thres_[param_id]=0.9*std::min(mean+stdval,Dtype(ZEROUT_THRESHOLD));
-  #endif
-  Dtype * sorted_weight= (Dtype*)new Dtype[weight_size];
-  memcpy(sorted_weight,weight,weight_size*sizeof(Dtype));
-  qsort((void *)sorted_weight,weight_size,sizeof(Dtype),compare);
-  Dtype zero_rate=0.8;//hard coding for time being
-  thres_[param_id]=sorted_weight[(int)(zero_rate*weight_size)];
-  delete []sorted_weight;
-}
-
 
 template <typename Dtype>
 void SGDSolver<Dtype>::Normalize(int param_id) {
